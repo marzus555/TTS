@@ -46,8 +46,9 @@ def get_commit_hash():
     # except:
     #     raise RuntimeError(
     #         " !! Commit before training to get the commit hash.")
-    commit = subprocess.check_output(['git', 'rev-parse', '--short',
-                                      'HEAD']).decode().strip()
+    #commit = subprocess.check_output(['git', 'rev-parse', '--short',
+    #                                  'HEAD']).decode().strip()
+    commit = 'DUMMY_COMMIT_RO_TACO';
     print(' > Git Hash: {}'.format(commit))
     return commit
 
