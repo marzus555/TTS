@@ -33,8 +33,9 @@ def load_config(config_path):
 
 
 def get_git_branch():
-    out = subprocess.check_output(["git", "branch"]).decode("utf8")
-    current = next(line for line in out.split("\n") if line.startswith("*"))
+    #out = subprocess.check_output(["git", "branch"]).decode("utf8")
+    #current = next(line for line in out.split("\n") if line.startswith("*"))
+    current = 'DUMMY_GIT_BRANCH_RO_TACO'
     return current.replace("* ", "")
 
 
