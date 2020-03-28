@@ -99,7 +99,7 @@ def rss(root_path, meta_file):
             cols = line.split('|')
             colsId = cols[0].split('-')
             folderId = colsId[0]
-            fileId = colsId[0]
+            fileId = colsId[1]
             ## temp solution. hardcoded 'ele_' for the moment
             fileName = 'ele_' + folderId + '_' + fileId + '.wav'
             wav_file = os.path.join(root_path, 'wav/' + folderId, fileName)
