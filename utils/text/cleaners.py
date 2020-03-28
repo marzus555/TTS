@@ -95,3 +95,6 @@ def phoneme_cleaners(text):
     text = expand_abbreviations(text)
     text = collapse_whitespace(text)
     return text
+  
+def romanian_cleaners(text):
+    return basic_cleaners(text)
