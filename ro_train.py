@@ -26,7 +26,7 @@ from utils.generic_utils import (NoamLR, check_update, count_parameters,
                                  set_init_dict, copy_config_file, setup_model)
 from utils.logger import Logger
 from utils.synthesis import synthesis
-from utils.text.ro_symbols import phonemes, symbols
+from utils.text.symbols import phonemes, symbols
 from utils.visual import plot_alignment, plot_spectrogram
 
 torch.backends.cudnn.enabled = True
