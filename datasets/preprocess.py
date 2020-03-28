@@ -102,7 +102,7 @@ def rss(root_path, meta_file):
             fileId = colsId[0]
             ## temp solution. hardcoded 'ele_' for the moment
             fileName = 'ele_' + folderId + '_' + fileId + '.wav'
-            wav_file = os.path.join(root_path, 'wavs', cols[0]+'.wav')
+            wav_file = os.path.join(root_path, 'wav/' + folderId, fileName)
             text = cols[1]
             items.append([text, wav_file])
     random.shuffle(items)
