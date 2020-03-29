@@ -144,7 +144,7 @@ def save_best_model(model, optimizer, model_loss, best_loss, out_path,
         print("\n > BEST MODEL ({0:.5f}) : {1:}".format(
             model_loss, bestmodel_path))
         torch.save(state, bestmodel_path)
-        torch.save(state, bestmodel_path + '_' + datetime.datetime.now())
+        torch.save(state, bestmodel_path + '_' + str(datetime.datetime.now()))
     return best_loss
 
 
