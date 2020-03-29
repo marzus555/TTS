@@ -28,6 +28,7 @@ from utils.logger import Logger
 from utils.synthesis import synthesis
 from utils.text.symbols import phonemes, symbols
 from utils.visual import plot_alignment, plot_spectrogram
+from google.colab import drive
 
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = False
@@ -468,8 +469,11 @@ def main(args):
         target_loss = train_loss
         if c.run_eval:
             target_loss = val_loss
+            
         best_loss = save_best_model(model, optimizer, target_loss, best_loss,
                                     OUT_PATH, current_step, epoch)
+        drive.flush_and_unmount()
+        drive.mount('/content/drive', force_remount=True)
 
 
 if __name__ == '__main__':
