@@ -26,11 +26,9 @@ class Logger(object):
                 param.std(), step)
             self.writer.add_histogram(
                 "layer{}-{}/param".format(layer_num, name), param, step)
-            paramGrad = param.grad
-            if not bool(paramGrad):
-                paramGrad = np.array([])
-            self.writer.add_histogram(
-                "layer{}-{}/grad".format(layer_num, name), paramGrad, step)
+            if bool(param.grad):
+                self.writer.add_histogram(
+                    "layer{}-{}/grad".format(layer_num, name), param.grad, step)
             layer_num += 1
 
     def dict_to_tb_scalar(self, scope_name, stats, step):
