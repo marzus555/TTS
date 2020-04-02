@@ -26,7 +26,7 @@ class Logger(object):
             self.writer.add_histogram(
                 "layer{}-{}/param".format(layer_num, name), param, step)
             paramGrad = param.grad
-            if bool(paramGrad):
+            if not bool(paramGrad):
                 paramGrad = np.array([])
             self.writer.add_histogram(
                 "layer{}-{}/grad".format(layer_num, name), paramGrad, step)
