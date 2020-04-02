@@ -1,4 +1,3 @@
-import numpy as np
 import traceback
 from tensorboardX import SummaryWriter
 
