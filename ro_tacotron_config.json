@@ -37,7 +37,7 @@
     "grad_clip": 1,      // upper limit for gradients for clipping.
     "epochs": 1000,         // total number of epochs to train.
     "lr": 0.0001,            // Initial learning rate. If Noam decay is active, maximum learning rate.
-    "lr_decay": false,      // if true, Noam learning rate decaying is applied through training.
+    "lr_decay": true,      // if true, Noam learning rate decaying is applied through training.
     "warmup_steps": 4000,   // Noam decay steps to increase the learning rate from 0 to "lr"
     "windowing": false,      // Enables attention windowing. Used only in eval mode.
     "memory_size": 5,       //  ONLY TACOTRON - memory queue size used to queue network predictions to feed autoregressive connection. Useful if r < 5. 
@@ -48,8 +48,8 @@
     "loss_masking": false,       // enable / disable loss masking against the sequence padding.
     "enable_eos_bos_chars": true, // enable/disable beginning of sentence and end of sentence chars.
 
-    "batch_size": 16,       // Batch size for training. Lower values than 32 might cause hard to learn attention.
-    "eval_batch_size":16,   
+    "batch_size": 32,       // Batch size for training. Lower values than 32 might cause hard to learn attention.
+    "eval_batch_size":32,   
     "r": 1,                 // Number of frames to predict for step.
     "wd": 0.000001,         // Weight decay weight.
     "checkpoint": true,     // If true, it saves checkpoints per "save_step"
