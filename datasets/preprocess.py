@@ -116,11 +116,12 @@ def rss(root_path, meta_file):
         for line in ttf:
             cols = line.split('|')
             colsId = cols[0].split('-')
-            folderId = colsId[0]
-            fileId = colsId[1]
-            ## temp solution. hardcoded 'ele_' for the moment
-            fileName = folderId + '_' + fileId + '.wav'
-            wav_file = os.path.join(root_path, 'wav/' + folderId, fileName)
+            trainingType = colsId[0]
+            speakerPrefix = colsId[1]
+            folderId = colsId[2]
+            fileId = colsId[3]
+            fileName = speakerPrefix + '_' + folderId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, trainingType + '/wav/' + folderId, fileName)
             text = cols[1]
             items.append([text, wav_file])
     random.shuffle(items)
