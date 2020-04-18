@@ -1,7 +1,7 @@
 {
     "github_branch":"dev-tacotron2",
     "restore_path":"/media/erogol/data_ssd/Data/models/ljspeech_models/4241_best_t2_model/best_model.pth.tar",
-    "run_name": "rss_elena_ds",
+    "run_name": "ro_model_run",
     "run_description": "finetune 4241 for align with architectural changes",
 
     "audio":{
@@ -60,7 +60,7 @@
 
     "run_eval": true,
     "test_delay_epochs": 2,  //Until attention is aligned, testing only wastes computation time.
-    "data_path": "/rss_elena_ds",  // DATASET-RELATED: can overwritten from command argument
+    "data_path": "/ro_ds",  // DATASET-RELATED: can overwritten from command argument
     "meta_file_train": "metadata_train.txt",      // DATASET-RELATED: metafile for training dataloader.
     "meta_file_val": "metadata_val.txt",    // DATASET-RELATED: metafile for evaluation dataloader.
     "dataset": "rss",      // DATASET-RELATED: one of TTS.dataset.preprocessors depending on your target dataset. Use "tts_cache" for pre-computed dataset by extract_features.py
