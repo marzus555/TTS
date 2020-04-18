@@ -119,7 +119,7 @@ def rss(root_path, meta_file):
             folderId = colsId[0]
             fileId = colsId[1]
             ## temp solution. hardcoded 'ele_' for the moment
-            fileName = 'adr_' + folderId + '_' + fileId + '.wav'
+            fileName = folderId + '_' + fileId + '.wav'
             wav_file = os.path.join(root_path, 'wav/' + folderId, fileName)
             text = cols[1]
             items.append([text, wav_file])
