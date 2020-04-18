@@ -90,6 +90,24 @@ def swara(root_path, meta_file):
     """TBD"""
     return ljspeech(root_path, meta_file)
 
+def rsc(root_path, meta_file):
+    """Normalizes the Nancy meta data file to TTS format"""
+    txt_file = os.path.join(root_path, meta_file)
+    items = []
+    with open(txt_file, 'r') as ttf:
+        for line in ttf:
+            cols = line.split('|')
+            colsId = cols[0].split('-')
+            folderId = colsId[0]
+            fileId = colsId[1]
+            ## temp solution. hardcoded 'ele_' for the moment
+            fileName = 'ele_' + folderId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, 'wav/' + folderId, fileName)
+            text = cols[1]
+            items.append([text, wav_file])
+    random.shuffle(items)
+    return items
+
 def rss(root_path, meta_file):
     """Normalizes the Nancy meta data file to TTS format"""
     txt_file = os.path.join(root_path, meta_file)
@@ -107,6 +125,7 @@ def rss(root_path, meta_file):
             items.append([text, wav_file])
     random.shuffle(items)
     return items
+
 
 def ljspeech(root_path, meta_file):
     """Normalizes the Nancy meta data file to TTS format"""
