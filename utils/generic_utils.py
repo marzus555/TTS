@@ -151,7 +151,7 @@ def check_update(model, grad_clip):
     r'''Check model gradient against unexpected jumps and failures'''
     skip_flag = False
     grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
-    if torch.isinf(grad_norm):
+    if np.isinf(grad_norm):
         print(" | > Gradient is INF !!")
         skip_flag = True
     return grad_norm, skip_flag
