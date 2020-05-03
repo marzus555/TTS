@@ -201,7 +201,7 @@ class Attention(nn.Module):
 
         # apply masking
         if mask is not None:
-            attention.data.masked_fill_(~mask, self._mask_value)
+            attention.data = attention.data.masked_fill(~mask, self._mask_value)
         # apply windowing - only in eval mode
         if not self.training and self.windowing:
             attention = self.apply_windowing(attention, inputs)
