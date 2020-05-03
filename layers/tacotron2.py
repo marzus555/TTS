@@ -204,6 +204,7 @@ class Attention(nn.Module):
             attention.data = attention.data.masked_fill(~mask, self._mask_value)
         # apply windowing - only in eval mode
         if not self.training and self.windowing:
+            print('aapplying windowing here')
             attention = self.apply_windowing(attention, inputs)
         # normalize attention values
         if self.norm == "softmax":
