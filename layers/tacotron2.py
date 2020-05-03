@@ -427,9 +427,9 @@ class Decoder(nn.Module):
             memory = memories[len(outputs)]
             mel_output, stop_token, attention_weights = self.decode(
                 memory)
-            outputs = outputs + [mel_output.squeeze(1)]
-            stop_tokens = stop_tokens.clone() + [stop_token.squeeze(1)]
-            alignments = alignments + [attention_weights]
+            outputs.append(mel_output.squeeze(1))
+            stop_tokens.append(stop_token.squeeze(1))
+            alignments.append(attention_weights)
 
         outputs, stop_tokens, alignments = self._parse_outputs(
             outputs, stop_tokens, alignments)
