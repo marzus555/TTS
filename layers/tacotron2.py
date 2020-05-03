@@ -342,18 +342,18 @@ class Decoder(nn.Module):
             self.attention_hidden = self.attention_rnn_init(
                 inputs.data.new_zeros(B).long())
             self.attention_cell = Variable(
-                inputs.data.new(B, self.attention_rnn_dim).zero_())
+                inputs.data.new(B, self.attention_rnn_dim).zero())
 
             self.decoder_hidden = self.decoder_rnn_inits(
                 inputs.data.new_zeros(B).long())
             self.decoder_cell = Variable(
-                inputs.data.new(B, self.decoder_rnn_dim).zero_())
+                inputs.data.new(B, self.decoder_rnn_dim).zero())
             
             self.context = Variable(
-            inputs.data.new(B, self.encoder_embedding_dim).zero_())
+            inputs.data.new(B, self.encoder_embedding_dim).zero())
 
-        self.attention_weights = Variable(inputs.data.new(B, T).zero_())
-        self.attention_weights_cum = Variable(inputs.data.new(B, T).zero_())
+        self.attention_weights = Variable(inputs.data.new(B, T).zero())
+        self.attention_weights_cum = Variable(inputs.data.new(B, T).zero())
         
         self.inputs = inputs
         self.processed_inputs = self.attention_layer.inputs_layer(inputs)
