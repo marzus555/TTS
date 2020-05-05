@@ -207,7 +207,7 @@ def rss(root_path, meta_file):
             items.append([text, wav_file, speaker_name])
     return items
 
-def rss(root_path, meta_file):
+def rsc(root_path, meta_file):
     """Normalizes the Nancy meta data file to TTS format"""
     txt_file = os.path.join(root_path, meta_file)
     items = []
