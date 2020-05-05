@@ -204,5 +204,4 @@ def rss(root_path, meta_file):
             wav_file = os.path.join(root_path, dataType + '/wav/' + folderId, fileName)
             text = cols[1]
             items.append([text, wav_file])
-    random.shuffle(items)
     return items
