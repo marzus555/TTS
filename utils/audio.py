@@ -8,6 +8,7 @@ import scipy.signal
 class AudioProcessor(object):
     def __init__(self,
                  sample_rate=None,
+                 force_sample_rate=False,
                  num_mels=None,
                  min_level_db=None,
                  frame_shift_ms=None,
@@ -33,6 +34,7 @@ class AudioProcessor(object):
         print(" > Setting up Audio Processor...")
 
         self.sample_rate = sample_rate
+        self.force_sample_rate = force_sample_rate
         self.num_mels = num_mels
         self.min_level_db = min_level_db or 0
         self.frame_shift_ms = frame_shift_ms
@@ -245,6 +247,8 @@ class AudioProcessor(object):
         return x
 
     def load_wav(self, filename, sr=None):
+        if self.force_sample_rate is True:
+            sr = self.sample_rate
         if sr is None:
             x, sr = sf.read(filename)
         else:
