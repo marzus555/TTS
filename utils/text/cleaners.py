@@ -112,3 +112,6 @@ def phoneme_cleaners(text):
     text = remove_aux_symbols(text)
     text = collapse_whitespace(text)
     return text
+
+def romanian_cleaners(text):
+    return basic_cleaners(text)
