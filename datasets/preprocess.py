@@ -187,3 +187,22 @@ def libri_tts(root_path, meta_files=None):
     for item in items:
         assert os.path.exists(item[1]), f" [!] wav file is not exist - {item[1]}"
     return items
+
+def rss(root_path, meta_file):
+    """Normalizes the Nancy meta data file to TTS format"""
+    txt_file = os.path.join(root_path, meta_file)
+    items = []
+    with open(txt_file, 'r') as ttf:
+        for line in ttf:
+            cols = line.split('|')
+            colsId = cols[0].split('-')
+            dataType = colsId[0]
+            speakerPrefix = colsId[1]
+            folderId = colsId[2]
+            fileId = colsId[3]
+            fileName = speakerPrefix + '_' + folderId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, dataType + '/wav/' + folderId, fileName)
+            text = cols[1]
+            items.append([text, wav_file])
+    random.shuffle(items)
+    return items
