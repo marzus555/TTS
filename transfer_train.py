@@ -518,6 +518,19 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
         tb_logger.tb_test_figures(global_step, test_figures)
     return keep_avg['avg_postnet_loss']
 
+def freezeModel(model):
+  for param in model.parameters():
+    param.requires_grad = False
+  print("Tacotron2 model fully frozen")
+    
+  #unfreeze the stopnet layer
+  for param in model.decoder.stopnet.parameters():
+    param.requires_grad = True
+  print("Unfreezing the stopnet")
+  #unfreeze the postnet layers
+  for param in model.postnet.parameters():
+    param.requires_grad = True
+  print("Unfreezing the postnet")
 
 # FIXME: move args definition/parsing inside of main?
 def main(args):  # pylint: disable=redefined-outer-name
@@ -557,6 +570,7 @@ def main(args):  # pylint: disable=redefined-outer-name
         num_speakers = 0
 
     model = setup_model(num_chars, num_speakers, c)
+    freezeModel(model)
 
     print(" | > Num output units : {}".format(ap.num_freq), flush=True)
 
