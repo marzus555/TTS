@@ -520,6 +520,7 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
 
 def freezeModel(model):
   c.stopnet = False
+  c.separate_stopnet = False
   for param in model.parameters():
     param.requires_grad = False
   print("Tacotron2 model fully frozen")
