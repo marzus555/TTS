@@ -519,14 +519,15 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
     return keep_avg['avg_postnet_loss']
 
 def freezeModel(model):
+  c.stopnet = False
   for param in model.parameters():
     param.requires_grad = False
   print("Tacotron2 model fully frozen")
     
   #unfreeze the stopnet layer
-  for param in model.decoder.stopnet.parameters():
-    param.requires_grad = True
-  print("Unfreezing the stopnet")
+  #for param in model.decoder.stopnet.parameters():
+  #  param.requires_grad = True
+  #print("Unfreezing the stopnet")
   #unfreeze the postnet layers
   for param in model.postnet.parameters():
     param.requires_grad = True
