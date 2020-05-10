@@ -519,8 +519,8 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
     return keep_avg['avg_postnet_loss']
 
 def freezeModel(model):
-  c.stopnet = False
-  c.separate_stopnet = False
+  #c.stopnet = False
+  #c.separate_stopnet = False
   for param in model.parameters():
     param.requires_grad = False
   print("Tacotron2 model fully frozen")
@@ -533,6 +533,23 @@ def freezeModel(model):
   for param in model.postnet.parameters():
     param.requires_grad = True
   print("Unfreezing the postnet")
+  
+  if model.decoder.attention_rnn_init:
+    for param in model.decoder.attention_rnn_init.parameters():
+      param.requires_grad = True
+  if model.decoder.go_frame_init:
+    for param in model.decoder.go_frame_init.parameters():
+      param.requires_grad = True
+  if model.decoder.decoder_rnn_inits:
+    for param in model.decoder.decoder_rnn_inits.parameters():
+      param.requires_grad = True
+  if model.decoder.attention_layer:
+    for param in model.decoder.attention_layer.parameters():
+      param.requires_grad = True
+  if model.decoder.prenet:
+    for param in model.decoder.prenet.parameters():
+      param.requires_grad = True
+  print("Unfreezing some decoder layers")
 
 # FIXME: move args definition/parsing inside of main?
 def main(args):  # pylint: disable=redefined-outer-name
