@@ -51,15 +51,15 @@ if __name__ == "__main__":
     global symbols, phonemes
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('text', type=str, help='Text to generate speech.')
+    #parser.add_argument('text', type=str, help='Text to generate speech.')
     parser.add_argument('config_path',
                         type=str,
                         help='Path to model config file.')
-    parser.add_argument(
-        'model_path',
-        type=str,
-        help='Path to model file.',
-    )
+    #parser.add_argument(
+    #    'model_path',
+    #    type=str,
+    #    help='Path to model file.',
+    #)
     parser.add_argument(
         'out_path',
         type=str,
@@ -103,6 +103,8 @@ if __name__ == "__main__":
     # load the config
     C = load_config(args.config_path)
     C.forward_attn_mask = True
+    text = C.sentence
+    model_path = C.model_path
 
     # load the audio processor
     ap = AudioProcessor(**C.audio)
@@ -121,7 +123,7 @@ if __name__ == "__main__":
     # load the model
     num_chars = len(phonemes) if C.use_phonemes else len(symbols)
     model = setup_model(num_chars, num_speakers, C)
-    cp = torch.load(args.model_path)
+    cp = torch.load(model_path)
     model.load_state_dict(cp['model'])
     model.eval()
     if args.use_cuda:
@@ -164,7 +166,7 @@ if __name__ == "__main__":
                        vocoder_model,
                        C,
                        VC,
-                       args.text,
+                       text,
                        ap,
                        ap_vocoder,
                        args.use_cuda,
