@@ -161,7 +161,7 @@ if __name__ == "__main__":
         ap_vocoder = None
 
     # synthesize voice
-    print(" > Text: {}".format(args.text))
+    print(" > Text: {}".format(text))
     _, _, _, wav = tts(model,
                        vocoder_model,
                        C,
