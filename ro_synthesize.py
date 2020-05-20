@@ -175,7 +175,7 @@ if __name__ == "__main__":
                        figures=False)
 
     # save the results
-    file_name = 'wav_file'
+    file_name = 'wav_file.wav'
     out_path = os.path.join(args.out_path, file_name)
     print(" > Saving output to {}".format(out_path))
     ap.save_wav(wav, out_path)
