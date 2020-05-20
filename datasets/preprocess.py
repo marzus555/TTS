@@ -207,6 +207,25 @@ def rss(root_path, meta_file):
             items.append([text, wav_file, speaker_name])
     return items
 
+def rss_ms(root_path, meta_file):
+    """Normalizes the Nancy meta data file to TTS format"""
+    txt_file = os.path.join(root_path, meta_file)
+    items = []
+    speaker_name = "rss"
+    with open(txt_file, 'r') as ttf:
+        for line in ttf:
+            cols = line.split('|')
+            colsId = cols[0].split('-')
+            dataType = colsId[0]
+            speaker_name = colsId[1]
+            folderId = colsId[2]
+            fileId = colsId[3]
+            fileName = speaker_name + '_' + folderId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, dataType, 'wav', folderId, fileName)
+            text = cols[1]
+            items.append([text, wav_file, speaker_name])
+    return items
+
 def rsc(root_path, meta_file):
     """Normalizes the Nancy meta data file to TTS format"""
     txt_file = os.path.join(root_path, meta_file)
@@ -217,6 +236,24 @@ def rsc(root_path, meta_file):
             cols = line.split('|')
             colsId = cols[0].split('_')
             folderId = colsId[0]
+            numberId = colsId[1]
+            fileId = colsId[2]
+            fileName = folderId + '_' + numberId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, 'wav', folderId, fileName)
+            text = cols[1]
+            items.append([text, wav_file, speaker_name])
+    return items
+
+def rsc_ms(root_path, meta_file):
+    """Normalizes the Nancy meta data file to TTS format"""
+    txt_file = os.path.join(root_path, meta_file)
+    items = []
+    with open(txt_file, 'r') as ttf:
+        for line in ttf:
+            cols = line.split('|')
+            colsId = cols[0].split('_')
+            folderId = colsId[0]
+            speaker_name = folderId
             numberId = colsId[1]
             fileId = colsId[2]
             fileName = folderId + '_' + numberId + '_' + fileId + '.wav'
