@@ -541,15 +541,15 @@ def main(args):  # pylint: disable=redefined-outer-name
     # parse speakers
     if c.use_speaker_embedding:
         speakers = get_speakers(meta_data_train)
-        if args.restore_path:
+        '''if args.restore_path:
             prev_out_path = os.path.dirname(args.restore_path)
             speaker_mapping = load_speaker_mapping(prev_out_path)
             assert all([speaker in speaker_mapping
                         for speaker in speakers]), "As of now you, you cannot " \
                                                    "introduce new speakers to " \
                                                    "a previously trained model."
-        else:
-            speaker_mapping = {name: i for i, name in enumerate(speakers)}
+        else:'''
+        speaker_mapping = {name: i for i, name in enumerate(speakers)}
         save_speaker_mapping(OUT_PATH, speaker_mapping)
         num_speakers = len(speaker_mapping)
         print("Training with {} speakers: {}".format(num_speakers,
