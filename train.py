@@ -75,6 +75,7 @@ def setup_loader(ap, r, is_val=False, verbose=False):
 
 def format_data(data):
     if c.use_speaker_embedding:
+        print('YESSS, it uses speaker embedding')
         speaker_mapping = load_speaker_mapping(OUT_PATH)
 
     # setup input data
