@@ -106,6 +106,14 @@ if __name__ == "__main__":
     text = C.sentence
     model_path = C.model_path
 
+
+    speakers_json = args.speakers_json
+    if C.speakers_json:
+        speakers_json = C.speakers_json
+    speaker_id = args.speaker_id
+    if C.speaker_id:
+        speaker_id = C.speaker_id
+
     # load the audio processor
     ap = AudioProcessor(**C.audio)
 
@@ -114,8 +122,8 @@ if __name__ == "__main__":
         symbols, phonemes = make_symbols(**C.characters)
 
     # load speakers
-    if args.speakers_json != '':
-        speakers = json.load(open(args.speakers_json, 'r'))
+    if speakers_json != '':
+        speakers = json.load(open(speakers_json, 'r'))
         num_speakers = len(speakers)
     else:
         num_speakers = 0
@@ -171,7 +179,7 @@ if __name__ == "__main__":
                        ap_vocoder,
                        args.use_cuda,
                        args.batched_vocoder,
-                       speaker_id=args.speaker_id,
+                       speaker_id=speaker_id,
                        figures=False)
 
     # save the results
