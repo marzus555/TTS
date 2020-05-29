@@ -106,13 +106,8 @@ if __name__ == "__main__":
     text = C.sentence
     model_path = C.model_path
 
-
-    speakers_json = args.speakers_json
-    if C.speakers_json:
-        speakers_json = C.speakers_json
-    speaker_id = args.speaker_id
-    if C.speaker_id:
-        speaker_id = C.speaker_id
+    speakers_json = C.speakers_json
+    speaker_id = C.speaker_id
 
     # load the audio processor
     ap = AudioProcessor(**C.audio)
