@@ -269,13 +269,12 @@ def swara(root_path, meta_file):
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
-            colsId = cols[0].split('-')
-            dataType = colsId[0]
-            speakerPrefix = colsId[1]
-            folderId = colsId[2]
-            fileId = colsId[3]
-            fileName = speakerPrefix + '_' + folderId + '_' + fileId + '.wav'
-            wav_file = os.path.join(root_path, dataType, 'wav', folderId, fileName)
+            colsId = cols[0].split('_')
+            folderId = colsId[0]
+            numberId = colsId[1]
+            fileId = colsId[2]
+            fileName = folderId + '_' + numberId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, 'wav', folderId, fileName)
             text = cols[1]
             items.append([text, wav_file, speaker_name])
     return items
@@ -286,13 +285,13 @@ def swara_ms(root_path, meta_file):
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
-            colsId = cols[0].split('-')
-            dataType = colsId[0]
-            speaker_name = colsId[1]
-            folderId = colsId[2]
-            fileId = colsId[3]
-            fileName = speaker_name + '_' + folderId + '_' + fileId + '.wav'
-            wav_file = os.path.join(root_path, dataType, 'wav', folderId, fileName)
+            colsId = cols[0].split('_')
+            folderId = colsId[0]
+            speaker_name = folderId
+            numberId = colsId[1]
+            fileId = colsId[2]
+            fileName = folderId + '_' + numberId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, 'wav', folderId, fileName)
             text = cols[1]
             items.append([text, wav_file, speaker_name])
     return items
