@@ -273,7 +273,8 @@ def swara(root_path, meta_file):
             folderId = colsId[0]
             numberId = colsId[1]
             fileId = colsId[2]
-            fileName = folderId + '_' + numberId + '_' + fileId + '.wav'
+            soundType = colsId[3]
+            fileName = folderId + '_' + numberId + '_' + fileId + '_' + soundType + '.wav'
             wav_file = os.path.join(root_path, 'wav', folderId, fileName)
             text = cols[1]
             items.append([text, wav_file, speaker_name])
@@ -290,7 +291,8 @@ def swara_ms(root_path, meta_file):
             speaker_name = folderId
             numberId = colsId[1]
             fileId = colsId[2]
-            fileName = folderId + '_' + numberId + '_' + fileId + '.wav'
+            soundType = colsId[3]
+            fileName = folderId + '_' + numberId + '_' + fileId + '_' + soundType + '.wav'
             wav_file = os.path.join(root_path, 'wav', folderId, fileName)
             text = cols[1]
             items.append([text, wav_file, speaker_name])
