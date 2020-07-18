@@ -138,3 +138,40 @@ def synthesis(model,
         if do_trim_silence:
             wav = trim_silence(wav, ap)
     return wav, alignment, decoder_output, postnet_output, stop_tokens
+
+def synthesis_for_results(model,
+              text,
+              CONFIG,
+              use_cuda,
+              ap,
+              speaker_id=None,
+              style_wav=None,
+              truncated=False):
+    """Synthesize voice for the given text.
+
+        Args:
+            model (TTS.models): model to synthesize.
+            text (str): target text
+            CONFIG (dict): config dictionary to be loaded from config.json.
+            use_cuda (bool): enable cuda.
+            ap (TTS.utils.audio.AudioProcessor): audio processor to process
+                model outputs.
+            speaker_id (int): id of speaker
+            style_wav (str): Uses for style embedding of GST.
+            truncated (bool): keep model states after inference. It can be used
+                for continuous inference at long texts.
+    """
+    # GST processing
+    style_mel = None
+    if CONFIG.model == "TacotronGST" and style_wav is not None:
+        style_mel = compute_style_mel(style_wav, ap, use_cuda)
+    # preprocess the given text
+    inputs = text_to_seqvec(text, CONFIG, use_cuda)
+    speaker_id = id_to_torch(speaker_id)
+    if speaker_id is not None and use_cuda:
+        speaker_id = speaker_id.cuda()
+    # synthesize voice
+    decoder_output, postnet_output, alignments, stop_tokens = run_model(
+        model, inputs, CONFIG, truncated, speaker_id, style_mel)
+    
+    return decoder_output, postnet_output, alignments, stop_tokens
