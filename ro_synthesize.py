@@ -138,7 +138,7 @@ if __name__ == "__main__":
         VC = load_config(args.vocoder_config_path)
         ap_vocoder = AudioProcessor(**VC.audio)
         bits = 10
-        vocoder_model = Model(
+        vocoder_model = VocoderModel(
         rnn_dims=512,
         fc_dims=512,
         mode=VC.mode,
