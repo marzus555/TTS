@@ -138,20 +138,22 @@ if __name__ == "__main__":
         VC = load_config(args.vocoder_config_path)
         ap_vocoder = AudioProcessor(**VC.audio)
         bits = 10
-        vocoder_model = VocoderModel(rnn_dims=512,
-                                     fc_dims=512,
-                                     mode=VC.mode,
-                                     mulaw=VC.mulaw,
-                                     pad=VC.pad,
-                                     upsample_factors=VC.upsample_factors,
-                                     feat_dims=VC.audio["num_mels"],
-                                     compute_dims=128,
-                                     res_out_dims=128,
-                                     res_blocks=10,
-                                     hop_length=ap.hop_length,
-                                     sample_rate=ap.sample_rate,
-                                     use_aux_net=True,
-                                     use_upsample_net=True)
+        vocoder_model = Model(
+        rnn_dims=512,
+        fc_dims=512,
+        mode=VC.mode,
+        mulaw=VC.mulaw,
+        pad=VC.pad,
+        use_aux_net=VC.use_aux_net,
+        use_upsample_net=VC.use_upsample_net,
+        upsample_factors=VC.upsample_factors,
+        feat_dims=80,
+        compute_dims=128,
+        res_out_dims=128,
+        res_blocks=10,
+        hop_length=ap.hop_length,
+        sample_rate=ap.sample_rate,
+    )
 
         check = torch.load(args.vocoder_path)
         vocoder_model.load_state_dict(check['model'])
