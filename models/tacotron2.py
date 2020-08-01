@@ -62,6 +62,13 @@ class Tacotron2(nn.Module):
         if self.bidirectional_decoder:
             self.decoder_backward = copy.deepcopy(self.decoder)
         self.postnet = Postnet(self.postnet_output_dim)
+        
+        '''  TODO: check if adversarial task is needed: https://github.com/Tomiinek/Multilingual_Text_to_Speech
+        # Reversal language classifier to make encoder truly languagge independent
+        if hp.reversal_classifier:
+            self._reversal_classifier = self._get_adversarial_classifier(hp.reversal_classifier_type)
+        '''
+        
 
     def _init_states(self):
         self.speaker_embeddings = None
@@ -85,6 +92,12 @@ class Tacotron2(nn.Module):
                                                       speaker_ids)
         encoder_outputs = self._add_language_embedding(encoder_outputs,
                                                       language_ids)
+        
+        '''  TODO: check if adversarial task is needed: https://github.com/Tomiinek/Multilingual_Text_to_Speech
+        # predict language as an adversarial task if needed
+        speaker_prediction = self._reversal_classifier(encoded) if hp.reversal_classifier else None
+        '''
+        
         decoder_outputs, alignments, stop_tokens = self.decoder(
             encoder_outputs, mel_specs, mask)
         postnet_outputs = self.postnet(decoder_outputs)
@@ -162,3 +175,18 @@ class Tacotron2(nn.Module):
                                                            -1)
             encoder_outputs = encoder_outputs + language_embeddings
         return encoder_outputs
+    
+    '''  TODO: check if adversarial task is needed: https://github.com/Tomiinek/Multilingual_Text_to_Speech
+    def _get_adversarial_classifier(self, name):
+        if name == "reversal":
+            return ReversalClassifier(
+                hp.encoder_dimension, 
+                hp.reversal_classifier_dim, 
+                hp.speaker_number,
+                hp.reversal_gradient_clipping)
+        elif name == "cosine":
+            return CosineSimilarityClassifier(
+                hp.encoder_dimension, 
+                hp.speaker_number,
+                hp.reversal_gradient_clipping)
+    '''
