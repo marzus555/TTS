@@ -22,11 +22,12 @@ def tts(model,
         use_cuda,
         batched_vocoder,
         speaker_id=None,
+        language_id=None,
         figures=False):
     t_1 = time.time()
     use_vocoder_model = vocoder_model is not None
     waveform, alignment, _, postnet_output, stop_tokens = synthesis(
-        model, text, C, use_cuda, ap, speaker_id, style_wav=False,
+        model, text, C, use_cuda, ap, speaker_id, language_id, style_wav=False,
         truncated=False, enable_eos_bos_chars=C.enable_eos_bos_chars,
         use_griffin_lim=(not use_vocoder_model), do_trim_silence=True)
 
@@ -94,6 +95,15 @@ if __name__ == "__main__":
         type=int,
         help="target speaker_id if the model is multi-speaker.",
         default=None)
+    parser.add_argument('--languages_json',
+                        type=str,
+                        help="JSON file for multi-language model.",
+                        default="")
+    parser.add_argument(
+        '--language_id',
+        type=int,
+        help="target language if the model is multi-language.",
+        default=None)
     args = parser.parse_args()
 
     if args.vocoder_path != "":
@@ -108,6 +118,8 @@ if __name__ == "__main__":
 
     speakers_json = C.speakers_json
     speaker_id = C.speaker_id
+    languages_json = C.languages_json
+    language_id = C.language_id
 
     # load the audio processor
     ap = AudioProcessor(**C.audio)
@@ -122,10 +134,17 @@ if __name__ == "__main__":
         num_speakers = len(speakers)
     else:
         num_speakers = 0
+        
+    # load languages
+    if languages_json != '':
+        languages = json.load(open(languages_json, 'r'))
+        num_languages = len(languages)
+    else:
+        num_languages = 0
 
     # load the model
     num_chars = len(phonemes) if C.use_phonemes else len(symbols)
-    model = setup_model(num_chars, num_speakers, C)
+    model = setup_model(num_chars, num_speakers, num_languages, C)
     cp = torch.load(model_path)
     model.load_state_dict(cp['model'])
     model.eval()
@@ -177,6 +196,7 @@ if __name__ == "__main__":
                        args.use_cuda,
                        args.batched_vocoder,
                        speaker_id=speaker_id,
+                       language_id=language_id,
                        figures=False)
 
     # save the results
