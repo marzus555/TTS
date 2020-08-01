@@ -30,17 +30,17 @@ def compute_style_mel(style_wav, ap, use_cuda):
     return style_mel
 
 
-def run_model(model, inputs, CONFIG, truncated, speaker_id=None, style_mel=None):
+def run_model(model, inputs, CONFIG, truncated, speaker_id=None, language_id=None, style_mel=None):
     if CONFIG.use_gst:
         decoder_output, postnet_output, alignments, stop_tokens = model.inference(
-            inputs, style_mel=style_mel, speaker_ids=speaker_id)
+            inputs, style_mel=style_mel, speaker_ids=speaker_id, language_ids=language_id)
     else:
         if truncated:
             decoder_output, postnet_output, alignments, stop_tokens = model.inference_truncated(
-                inputs, speaker_ids=speaker_id)
+                inputs, speaker_ids=speaker_id, language_ids=language_id)
         else:
             decoder_output, postnet_output, alignments, stop_tokens = model.inference(
-                inputs, speaker_ids=speaker_id)
+                inputs, speaker_ids=speaker_id, language_ids=language_id)
     return decoder_output, postnet_output, alignments, stop_tokens
 
 
@@ -69,6 +69,12 @@ def id_to_torch(speaker_id):
         speaker_id = torch.from_numpy(speaker_id).unsqueeze(0)
     return speaker_id
 
+def lang_id_to_torch(language_id):
+    if language_id is not None:
+        language_id = np.asarray(language_id)
+        language_id = torch.from_numpy(language_id).unsqueeze(0)
+    return language_id
+
 
 # TODO: perform GL with pytorch for batching
 def apply_griffin_lim(inputs, input_lens, CONFIG, ap):
@@ -94,6 +100,7 @@ def synthesis(model,
               use_cuda,
               ap,
               speaker_id=None,
+              language_id=None,
               style_wav=None,
               truncated=False,
               enable_eos_bos_chars=False, #pylint: disable=unused-argument
@@ -109,6 +116,7 @@ def synthesis(model,
             ap (TTS.utils.audio.AudioProcessor): audio processor to process
                 model outputs.
             speaker_id (int): id of speaker
+            language_id (int): id of language
             style_wav (str): Uses for style embedding of GST.
             truncated (bool): keep model states after inference. It can be used
                 for continuous inference at long texts.
@@ -124,9 +132,12 @@ def synthesis(model,
     speaker_id = id_to_torch(speaker_id)
     if speaker_id is not None and use_cuda:
         speaker_id = speaker_id.cuda()
+    language_id = lang_id_to_torch(language_id)
+    if language_id is not None and use_cuda:
+        language_id = language_id.cuda()
     # synthesize voice
     decoder_output, postnet_output, alignments, stop_tokens = run_model(
-        model, inputs, CONFIG, truncated, speaker_id, style_mel)
+        model, inputs, CONFIG, truncated, speaker_id, language_id, style_mel)
     # convert outputs to numpy
     postnet_output, decoder_output, alignment = parse_outputs(
         postnet_output, decoder_output, alignments)
@@ -145,6 +156,7 @@ def synthesis_for_results(model,
               use_cuda,
               ap,
               speaker_id=None,
+              language_id=None,
               style_wav=None,
               truncated=False):
     """Synthesize voice for the given text.
@@ -157,6 +169,7 @@ def synthesis_for_results(model,
             ap (TTS.utils.audio.AudioProcessor): audio processor to process
                 model outputs.
             speaker_id (int): id of speaker
+            language_id (int): id of language
             style_wav (str): Uses for style embedding of GST.
             truncated (bool): keep model states after inference. It can be used
                 for continuous inference at long texts.
@@ -170,8 +183,11 @@ def synthesis_for_results(model,
     speaker_id = id_to_torch(speaker_id)
     if speaker_id is not None and use_cuda:
         speaker_id = speaker_id.cuda()
+    language_id = lang_id_to_torch(language_id)
+    if language_id is not None and use_cuda:
+        language_id = language_id.cuda()
     # synthesize voice
     decoder_output, postnet_output, alignments, stop_tokens = run_model(
-        model, inputs, CONFIG, truncated, speaker_id, style_mel)
+        model, inputs, CONFIG, truncated, speaker_id, language_id, style_mel)
     
     return decoder_output, postnet_output, alignments, stop_tokens
