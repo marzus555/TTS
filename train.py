@@ -24,6 +24,8 @@ from TTS.utils.generic_utils import (
 from TTS.utils.logger import Logger
 from TTS.utils.speakers import load_speaker_mapping, save_speaker_mapping, \
     get_speakers
+from TTS.utils.languages import load_language_mapping, save_language_mapping, \
+    get_languages
 from TTS.utils.synthesis import synthesis
 from TTS.utils.text.symbols import make_symbols, phonemes, symbols
 from TTS.utils.visual import plot_alignment, plot_spectrogram
@@ -76,11 +78,15 @@ def setup_loader(ap, r, is_val=False, verbose=False):
 def format_data(data):
     if c.use_speaker_embedding:
         speaker_mapping = load_speaker_mapping(OUT_PATH)
+        
+    if c.use_language_embedding:
+        language_mapping = load_language_mapping(OUT_PATH)
 
     # setup input data
     text_input = data[0]
     text_lengths = data[1]
     speaker_names = data[2]
+    language_names = data[2]
     linear_input = data[3] if c.model in ["Tacotron"] else None
     mel_input = data[4]
     mel_lengths = data[5]
@@ -95,6 +101,14 @@ def format_data(data):
         speaker_ids = torch.LongTensor(speaker_ids)
     else:
         speaker_ids = None
+
+    if c.use_language_embedding:
+        language_ids = [
+            language_mapping[language_name] for language_name in language_names
+        ]
+        language_ids = torch.LongTensor(language_ids)
+    else:
+        language_ids = None
 
     # set stop targets view, we predict a single stop token per iteration.
     stop_targets = stop_targets.view(text_input.shape[0],
@@ -112,7 +126,9 @@ def format_data(data):
         stop_targets = stop_targets.cuda(non_blocking=True)
         if speaker_ids is not None:
             speaker_ids = speaker_ids.cuda(non_blocking=True)
-    return text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, avg_text_length, avg_spec_length
+        if language_ids is not None:
+            language_ids = language_ids.cuda(non_blocking=True)
+    return text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, language_ids, avg_text_length, avg_spec_length
 
 
 def train(model, criterion, criterion_st, optimizer, optimizer_st, scheduler,
@@ -146,7 +162,7 @@ def train(model, criterion, criterion_st, optimizer, optimizer_st, scheduler,
         start_time = time.time()
 
         # format data
-        text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, avg_text_length, avg_spec_length = format_data(data)
+        text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, language_ids, avg_text_length, avg_spec_length = format_data(data)
         loader_time = time.time() - end_time
 
         global_step += 1
@@ -161,10 +177,10 @@ def train(model, criterion, criterion_st, optimizer, optimizer_st, scheduler,
         # forward pass model
         if c.bidirectional_decoder:
             decoder_output, postnet_output, alignments, stop_tokens, decoder_backward_output, alignments_backward = model(
-                text_input, text_lengths, mel_input, speaker_ids=speaker_ids)
+                text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
         else:
             decoder_output, postnet_output, alignments, stop_tokens = model(
-                text_input, text_lengths, mel_input, speaker_ids=speaker_ids)
+                text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
 
         # loss computation
         stop_loss = criterion_st(stop_tokens,
@@ -333,6 +349,8 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
     data_loader = setup_loader(ap, model.decoder.r, is_val=True)
     if c.use_speaker_embedding:
         speaker_mapping = load_speaker_mapping(OUT_PATH)
+    if c.use_language_embedding:
+        language_mapping = load_language_mapping(OUT_PATH)
     model.eval()
     epoch_time = 0
     eval_values_dict = {
@@ -353,16 +371,16 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
             start_time = time.time()
 
             # format data
-            text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, _, _ = format_data(data)
+            text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, language_ids, _, _ = format_data(data)
             assert mel_input.shape[1] % model.decoder.r == 0
 
             # forward pass model
             if c.bidirectional_decoder:
                 decoder_output, postnet_output, alignments, stop_tokens, decoder_backward_output, alignments_backward = model(
-                    text_input, text_lengths, mel_input, speaker_ids=speaker_ids)
+                    text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
             else:
                 decoder_output, postnet_output, alignments, stop_tokens = model(
-                    text_input, text_lengths, mel_input, speaker_ids=speaker_ids)
+                    text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
 
             # loss computation
             stop_loss = criterion_st(
@@ -484,6 +502,7 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
         test_figures = {}
         print(" | > Synthesizing test sentences")
         speaker_id = 0 if c.use_speaker_embedding else None
+        language_id = 0 if c.use_language_embedding else None
         style_wav = c.get("style_wav_for_test")
         for idx, test_sentence in enumerate(test_sentences):
             try:
@@ -494,6 +513,7 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
                     use_cuda,
                     ap,
                     speaker_id=speaker_id,
+                    language_id=language_id,
                     style_wav=style_wav,
                     truncated=False,
                     enable_eos_bos_chars=c.enable_eos_bos_chars, #pylint: disable=unused-argument
@@ -555,8 +575,27 @@ def main(args):  # pylint: disable=redefined-outer-name
                                                      ", ".join(speakers)))
     else:
         num_speakers = 0
+        
+    # parse languages
+    if c.use_language_embedding:
+        languages = get_languages(meta_data_train)
+        if args.restore_path:
+            prev_out_path = os.path.dirname(args.restore_path)
+            language_mapping = load_language_mapping(prev_out_path)
+            assert all([language in language_mapping
+                        for language in languages]), "As of now you, you cannot " \
+                                                   "introduce new languages to " \
+                                                   "a previously trained model."
+        else:
+            language_mapping = {name: i for i, name in enumerate(languages)}
+        save_language_mapping(OUT_PATH, language_mapping)
+        num_languages = len(language_mapping)
+        print("Training with {} languages: {}".format(num_languages,
+                                                     ", ".join(languages)))
+    else:
+        num_languages = 0
 
-    model = setup_model(num_chars, num_speakers, c)
+    model = setup_model(num_chars, num_speakers, num_languages, c)
 
     print(" | > Num output units : {}".format(ap.num_freq), flush=True)
 
