@@ -141,6 +141,7 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         'avg_postnet_loss': 0,
         'avg_decoder_loss': 0,
         'avg_stop_loss': 0,
+        'avg_prediction_loss': 0,
         'avg_align_score': 0,
         'avg_step_time': 0,
         'avg_loader_time': 0,
@@ -185,8 +186,8 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         # loss computation
         stop_loss = criterion_st(stop_tokens,
                                  stop_targets, mel_lengths) if c.stopnet else torch.zeros(1)
-        # loss computation
-        speaker_prediction_loss = criterion_prediction(text_lengths, speaker_ids, speaker_prediction) if c.use_reversal_classifier else torch.zeros(1)
+        # loss computation prediction
+        prediction_loss = criterion_prediction(text_lengths, speaker_ids, speaker_prediction) if c.use_reversal_classifier else torch.zeros(1)
         if c.loss_masking:
             decoder_loss = criterion(decoder_output, mel_input, mel_lengths)
             if c.model in ["Tacotron", "TacotronGST"]:
@@ -205,6 +206,9 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         if not c.separate_stopnet and c.stopnet:
             loss += stop_loss
 
+        # loss is compounded
+        loss += prediction_loss
+            
         # backward decoder
         if c.bidirectional_decoder:
             if c.loss_masking:
@@ -239,11 +243,11 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         if global_step % c.print_step == 0:
             print(
                 "   | > Step:{}/{}  GlobalStep:{}  PostnetLoss:{:.5f}  "
-                "DecoderLoss:{:.5f}  StopLoss:{:.5f}  AlignScore:{:.4f}  GradNorm:{:.5f}  "
+                "DecoderLoss:{:.5f}  StopLoss:{:.5f}  PredictionLoss:{:.5f}  AlignScore:{:.4f}  GradNorm:{:.5f}  "
                 "GradNormST:{:.5f}  AvgTextLen:{:.1f}  AvgSpecLen:{:.1f}  StepTime:{:.2f}  "
                 "LoaderTime:{:.2f}  LR:{:.6f}".format(
                     num_iter, batch_n_iter, global_step, postnet_loss.item(),
-                    decoder_loss.item(), stop_loss.item(), align_score,
+                    decoder_loss.item(), stop_loss.item(), prediction_loss.item(), align_score,
                     grad_norm, grad_norm_st, avg_text_length, avg_spec_length,
                     step_time, loader_time, current_lr),
                 flush=True)
@@ -255,6 +259,8 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
             loss = reduce_tensor(loss.data, num_gpus)
             stop_loss = reduce_tensor(stop_loss.data,
                                       num_gpus) if c.stopnet else stop_loss
+            prediction_loss = reduce_tensor(prediction_loss.data,
+                                      num_gpus) if c.use_reversal_classifier else prediction_loss
 
         if args.rank == 0:
             update_train_values = {
@@ -265,6 +271,9 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
                 'avg_stop_loss':
                 stop_loss
                 if isinstance(stop_loss, float) else float(stop_loss.item()),
+                'avg_prediction_loss':
+                prediction_loss
+                if isinstance(prediction_loss, float) else float(prediction_loss.item()),
                 'avg_step_time':
                 step_time,
                 'avg_loader_time':
@@ -327,6 +336,7 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
           "AvgStepTime:{:.2f}  AvgLoaderTime:{:.2f}".format(
               global_step, keep_avg['avg_postnet_loss'],
               keep_avg['avg_decoder_loss'], keep_avg['avg_stop_loss'],
+              keep_avg['avg_prediction_loss'],
               keep_avg['avg_align_score'], epoch_time,
               keep_avg['avg_step_time'], keep_avg['avg_loader_time']),
           flush=True)
@@ -337,6 +347,7 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
             "loss_postnet": keep_avg['avg_postnet_loss'],
             "loss_decoder": keep_avg['avg_decoder_loss'],
             "stop_loss": keep_avg['avg_stop_loss'],
+            "prediction_loss": keep_avg['avg_prediction_loss'],
             "alignment_score": keep_avg['avg_align_score'],
             "epoch_time": epoch_time
         }
@@ -347,7 +358,7 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
 
 
 @torch.no_grad()
-def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
+def evaluate(model, criterion, criterion_st, criterion_prediction, ap, global_step, epoch):
     data_loader = setup_loader(ap, model.decoder.r, is_val=True)
     if c.use_speaker_embedding:
         speaker_mapping = load_speaker_mapping(OUT_PATH)
@@ -359,6 +370,7 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
         'avg_postnet_loss': 0,
         'avg_decoder_loss': 0,
         'avg_stop_loss': 0,
+        'avg_prediction_loss': 0,
         'avg_align_score': 0
     }
     if c.bidirectional_decoder:
@@ -378,15 +390,18 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
 
             # forward pass model
             if c.bidirectional_decoder:
-                decoder_output, postnet_output, alignments, stop_tokens, decoder_backward_output, alignments_backward = model(
+                decoder_output, postnet_output, alignments, stop_tokens, decoder_backward_output, alignments_backward, speaker_prediction = model(
                     text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
             else:
-                decoder_output, postnet_output, alignments, stop_tokens = model(
+                decoder_output, postnet_output, alignments, stop_tokens, speaker_prediction = model(
                     text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
 
             # loss computation
             stop_loss = criterion_st(
                 stop_tokens, stop_targets, mel_lengths) if c.stopnet else torch.zeros(1)
+            # loss computation prediction
+            prediction_loss = criterion_prediction(
+                text_lengths, speaker_ids, speaker_prediction) if c.use_reversal_classifier  else torch.zeros(1)
             if c.loss_masking:
                 decoder_loss = criterion(decoder_output, mel_input,
                                          mel_lengths)
@@ -402,7 +417,7 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
                     postnet_loss = criterion(postnet_output, linear_input)
                 else:
                     postnet_loss = criterion(postnet_output, mel_input)
-            loss = decoder_loss + postnet_loss + stop_loss
+            loss = decoder_loss + postnet_loss + stop_loss + prediction_loss
 
             # backward decoder loss
             if c.bidirectional_decoder:
@@ -427,6 +442,7 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
                 decoder_loss = reduce_tensor(decoder_loss.data, num_gpus)
                 if c.stopnet:
                     stop_loss = reduce_tensor(stop_loss.data, num_gpus)
+                prediction_loss = reduce_tensor(prediction_loss.data, num_gpus)
 
             keep_avg.update_values({
                 'avg_postnet_loss':
@@ -435,17 +451,19 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
                 float(decoder_loss.item()),
                 'avg_stop_loss':
                 float(stop_loss.item()),
+                'avg_prediction_loss':
+                float(prediction_loss.item())
             })
 
             if num_iter % c.print_step == 0:
                 print(
                     "   | > TotalLoss: {:.5f}   PostnetLoss: {:.5f} - {:.5f}  DecoderLoss:{:.5f} - {:.5f} "
-                    "StopLoss: {:.5f} - {:.5f}  AlignScore: {:.4f} : {:.4f}"
+                    "StopLoss: {:.5f} - {:.5f}  PredictionLoss: {:.5f} - {:.5f}  AlignScore: {:.4f} : {:.4f}"
                     .format(loss.item(), postnet_loss.item(),
                             keep_avg['avg_postnet_loss'],
                             decoder_loss.item(),
                             keep_avg['avg_decoder_loss'], stop_loss.item(),
-                            keep_avg['avg_stop_loss'], align_score,
+                            keep_avg['avg_stop_loss'], prediction_loss.item(), keep_avg['avg_prediction_loss'], align_score,
                             keep_avg['avg_align_score']),
                     flush=True)
 
@@ -477,6 +495,7 @@ def evaluate(model, criterion, criterion_st, ap, global_step, epoch):
                 "loss_postnet": keep_avg['avg_postnet_loss'],
                 "loss_decoder": keep_avg['avg_decoder_loss'],
                 "stop_loss": keep_avg['avg_stop_loss'],
+                "prediction_loss": keep_avg['avg_prediction_loss'],
                 "alignment_score": keep_avg['avg_align_score']
             }
 
@@ -683,7 +702,7 @@ def main(args):  # pylint: disable=redefined-outer-name
         train_loss, global_step = train(model, criterion, criterion_st, criterion_prediction,
                                         optimizer, optimizer_st, scheduler, ap,
                                         global_step, epoch)
-        val_loss = evaluate(model, criterion, criterion_st, ap, global_step,
+        val_loss = evaluate(model, criterion, criterion_st, criterion_prediction, ap, global_step,
                             epoch)
         print(" | > Training Loss: {:.5f}   Validation Loss: {:.5f}".format(
             train_loss, val_loss),
