@@ -520,7 +520,7 @@ def check_config(c):
     _check_argument('style_wav_for_test', c, restricted=True, val_type=str)
     _check_argument('use_gst', c, restricted=True, val_type=bool)
     
-    # multi-speaker gst
+    # multi-language
     _check_argument('use_language_embedding', c, restricted=True, val_type=bool)
 
     # datasets - checking only the first entry
