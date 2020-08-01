@@ -86,11 +86,11 @@ def format_data(data):
     text_input = data[0]
     text_lengths = data[1]
     speaker_names = data[2]
-    language_names = data[2]
-    linear_input = data[3] if c.model in ["Tacotron"] else None
-    mel_input = data[4]
-    mel_lengths = data[5]
-    stop_targets = data[6]
+    language_names = data[3]
+    linear_input = data[4] if c.model in ["Tacotron"] else None
+    mel_input = data[5]
+    mel_lengths = data[6]
+    stop_targets = data[7]
     avg_text_length = torch.mean(text_lengths.float())
     avg_spec_length = torch.mean(mel_lengths.float())
 
