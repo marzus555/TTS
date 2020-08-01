@@ -108,7 +108,7 @@ class Tacotron2(nn.Module):
             decoder_outputs, postnet_outputs, alignments)
         if self.bidirectional_decoder:
             decoder_outputs_backward, alignments_backward = self._backward_inference(mel_specs, encoder_outputs, mask)
-            return decoder_outputs, postnet_outputs, alignments, stop_tokens, decoder_outputs_backward, alignments_backward
+            return decoder_outputs, postnet_outputs, alignments, stop_tokens, decoder_outputs_backward, alignments_backward, speaker_prediction
         return decoder_outputs, postnet_outputs, alignments, stop_tokens, speaker_prediction
 
     @torch.no_grad()
