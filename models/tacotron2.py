@@ -11,6 +11,7 @@ class Tacotron2(nn.Module):
     def __init__(self,
                  num_chars,
                  num_speakers,
+                 num_languages,
                  r,
                  postnet_output_dim=80,
                  decoder_output_dim=80,
@@ -34,6 +35,10 @@ class Tacotron2(nn.Module):
         decoder_dim = 512 if num_speakers > 1 else 512
         encoder_dim = 512 if num_speakers > 1 else 512
         proj_speaker_dim = 80 if num_speakers > 1 else 0
+        
+        decoder_dim = 512 if num_languages  > 1 else 512
+        encoder_dim = 512 if num_languages  > 1 else 512
+        proj_language_dim = 80 if num_languages  > 1 else 0
         # embedding layer
         self.embedding = nn.Embedding(num_chars, 512, padding_idx=0)
         std = sqrt(2.0 / (num_chars + 512))
@@ -44,11 +49,16 @@ class Tacotron2(nn.Module):
             self.speaker_embedding.weight.data.normal_(0, 0.3)
             self.speaker_embeddings = None
             self.speaker_embeddings_projected = None
+        if num_languages > 1:
+            self.language_embedding = nn.Embedding(num_languages, 512)
+            self.language_embedding.weight.data.normal_(0, 0.3)
+            self.language_embeddings = None
+            self.language_embeddings_projected = None
         self.encoder = Encoder(encoder_dim)
         self.decoder = Decoder(decoder_dim, self.decoder_output_dim, r, attn_type, attn_win,
                                attn_norm, prenet_type, prenet_dropout,
                                forward_attn, trans_agent, forward_attn_mask,
-                               location_attn, attn_K, separate_stopnet, proj_speaker_dim)
+                               location_attn, attn_K, separate_stopnet, proj_speaker_dim, proj_language_dim)
         if self.bidirectional_decoder:
             self.decoder_backward = copy.deepcopy(self.decoder)
         self.postnet = Postnet(self.postnet_output_dim)
@@ -56,6 +66,8 @@ class Tacotron2(nn.Module):
     def _init_states(self):
         self.speaker_embeddings = None
         self.speaker_embeddings_projected = None
+        self.language_embeddings = None
+        self.language_embeddings_projected = None
 
     @staticmethod
     def shape_outputs(mel_outputs, mel_outputs_postnet, alignments):
@@ -63,7 +75,7 @@ class Tacotron2(nn.Module):
         mel_outputs_postnet = mel_outputs_postnet.transpose(1, 2)
         return mel_outputs, mel_outputs_postnet, alignments
 
-    def forward(self, text, text_lengths, mel_specs=None, speaker_ids=None):
+    def forward(self, text, text_lengths, mel_specs=None, speaker_ids=None, language_ids=None):
         self._init_states()
         # compute mask for padding
         mask = sequence_mask(text_lengths).to(text.device)
@@ -71,6 +83,8 @@ class Tacotron2(nn.Module):
         encoder_outputs = self.encoder(embedded_inputs, text_lengths)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
+        encoder_outputs = self._add_language_embedding(encoder_outputs,
+                                                      language_ids)
         decoder_outputs, alignments, stop_tokens = self.decoder(
             encoder_outputs, mel_specs, mask)
         postnet_outputs = self.postnet(decoder_outputs)
@@ -83,11 +97,13 @@ class Tacotron2(nn.Module):
         return decoder_outputs, postnet_outputs, alignments, stop_tokens
 
     @torch.no_grad()
-    def inference(self, text, speaker_ids=None):
+    def inference(self, text, speaker_ids=None, language_ids=None):
         embedded_inputs = self.embedding(text).transpose(1, 2)
         encoder_outputs = self.encoder.inference(embedded_inputs)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
+        encoder_outputs = self._add_language_embedding(encoder_outputs,
+                                                      language_ids)
         mel_outputs, alignments, stop_tokens = self.decoder.inference(
             encoder_outputs)
         mel_outputs_postnet = self.postnet(mel_outputs)
@@ -96,7 +112,7 @@ class Tacotron2(nn.Module):
             mel_outputs, mel_outputs_postnet, alignments)
         return mel_outputs, mel_outputs_postnet, alignments, stop_tokens
 
-    def inference_truncated(self, text, speaker_ids=None):
+    def inference_truncated(self, text, speaker_ids=None, language_ids=None):
         """
         Preserve model states for continuous inference
         """
@@ -104,6 +120,8 @@ class Tacotron2(nn.Module):
         encoder_outputs = self.encoder.inference_truncated(embedded_inputs)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
+        encoder_outputs = self._add_language_embedding(encoder_outputs,
+                                                      language_ids)
         mel_outputs, alignments, stop_tokens = self.decoder.inference_truncated(
             encoder_outputs)
         mel_outputs_postnet = self.postnet(mel_outputs)
@@ -115,7 +133,7 @@ class Tacotron2(nn.Module):
     def _backward_inference(self, mel_specs, encoder_outputs, mask):
         decoder_outputs_b, alignments_b, _ = self.decoder_backward(
             encoder_outputs, torch.flip(mel_specs, dims=(1,)), mask,
-            self.speaker_embeddings_projected)
+            self.speaker_embeddings_projected, self.language_embeddings_projected)
         decoder_outputs_b = decoder_outputs_b.transpose(1, 2)
         return decoder_outputs_b, alignments_b
 
@@ -130,4 +148,17 @@ class Tacotron2(nn.Module):
                                                            encoder_outputs.size(1),
                                                            -1)
             encoder_outputs = encoder_outputs + speaker_embeddings
+        return encoder_outputs
+
+    def _add_language_embedding(self, encoder_outputs, language_ids):
+        if hasattr(self, "language_embedding") and language_ids is None:
+            raise RuntimeError(" [!] Model has language embedding layer but language_id is not provided")
+        if hasattr(self, "language_embedding") and language_ids is not None:
+            language_embeddings = self.language_embedding(language_ids)
+
+            language_embeddings.unsqueeze_(1)
+            language_embeddings = language_embeddings.expand(encoder_outputs.size(0),
+                                                           encoder_outputs.size(1),
+                                                           -1)
+            encoder_outputs = encoder_outputs + language_embeddings
         return encoder_outputs
