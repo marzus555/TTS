@@ -278,13 +278,14 @@ def set_init_dict(model_dict, checkpoint, c):
     return model_dict
 
 
-def setup_model(num_chars, num_speakers, c):
+def setup_model(num_chars, num_speakers, num_languages, c):
     print(" > Using model: {}".format(c.model))
     MyModel = importlib.import_module('TTS.models.' + c.model.lower())
     MyModel = getattr(MyModel, c.model)
     if c.model.lower() in "tacotron":
         model = MyModel(num_chars=num_chars,
                         num_speakers=num_speakers,
+                        num_languages=num_languages,
                         r=c.r,
                         postnet_output_dim=c.audio['num_freq'],
                         decoder_output_dim=c.audio['num_mels'],
@@ -305,6 +306,7 @@ def setup_model(num_chars, num_speakers, c):
     elif c.model.lower() == "tacotron2":
         model = MyModel(num_chars=num_chars,
                         num_speakers=num_speakers,
+                        num_languages=num_languages,
                         r=c.r,
                         postnet_output_dim=c.audio['num_mels'],
                         decoder_output_dim=c.audio['num_mels'],
@@ -325,8 +327,14 @@ def setup_model(num_chars, num_speakers, c):
 
 def split_dataset(items):
     is_multi_speaker = False
-    speakers = [item[-1] for item in items]
+    speakers = [item[-2] for item in items]
     is_multi_speaker = len(set(speakers)) > 1
+    
+    is_multi_language = False
+    languages = [item[-1] for item in items]
+    is_multi_language = len(set(languages)) > 1
+    # TODO: add split support for language model too
+    
     eval_split_size = 500 if len(items) * 0.01 > 500 else int(
         len(items) * 0.01)
     np.random.seed(0)
@@ -335,7 +343,7 @@ def split_dataset(items):
         items_eval = []
         # most stupid code ever -- Fix it !
         while len(items_eval) < eval_split_size:
-            speakers = [item[-1] for item in items]
+            speakers = [item[-2] for item in items]
             speaker_counter = Counter(speakers)
             item_idx = np.random.randint(0, len(items))
             if speaker_counter[items[item_idx][-1]] > 1:
@@ -511,6 +519,9 @@ def check_config(c):
     _check_argument('use_speaker_embedding', c, restricted=True, val_type=bool)
     _check_argument('style_wav_for_test', c, restricted=True, val_type=str)
     _check_argument('use_gst', c, restricted=True, val_type=bool)
+    
+    # multi-speaker gst
+    _check_argument('use_language_embedding', c, restricted=True, val_type=bool)
 
     # datasets - checking only the first entry
     _check_argument('datasets', c, restricted=True, val_type=list)
