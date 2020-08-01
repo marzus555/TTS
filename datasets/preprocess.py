@@ -193,7 +193,7 @@ def rss(root_path, meta_file):
     txt_file = os.path.join(root_path, meta_file)
     items = []
     speaker_name = "rss"
-    language_name = "rss"
+    language_name = "ro"
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
@@ -213,7 +213,7 @@ def rss_ms(root_path, meta_file):
     txt_file = os.path.join(root_path, meta_file)
     items = []
     speaker_name = "rss"
-    language_name = "rss"
+    language_name = "ro"
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
@@ -233,7 +233,7 @@ def rsc(root_path, meta_file):
     txt_file = os.path.join(root_path, meta_file)
     items = []
     speaker_name = "rsc"
-    language_name = "rsc"
+    language_name = "ro"
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
@@ -252,7 +252,7 @@ def rsc_ms(root_path, meta_file):
     txt_file = os.path.join(root_path, meta_file)
     items = []
     speaker_name = "rsc"
-    language_name = "rsc"
+    language_name = "ro"
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
@@ -271,7 +271,7 @@ def swara(root_path, meta_file):
     txt_file = os.path.join(root_path, meta_file)
     items = []
     speaker_name = "swara"
-    language_name = "swara"
+    language_name = "ro"
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
@@ -290,7 +290,7 @@ def swara_ms(root_path, meta_file):
     txt_file = os.path.join(root_path, meta_file)
     items = []
     speaker_name = "swara"
-    language_name = "swara"
+    language_name = "ro"
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
@@ -310,20 +310,36 @@ def swara_ms_ml(root_path, meta_file):
     txt_file = os.path.join(root_path, meta_file)
     items = []
     speaker_name = "swara"
-    language_name = "swara"
+    language_name = "ro"
     with open(txt_file, 'r') as ttf:
         for line in ttf:
             cols = line.split('|')
             colsId = cols[0].split('_')
             folderId = colsId[0]
-            language_name = folderId
-            subFolderId = colsId[1]
-            speaker_name = subFolderId
-            numberId = colsId[2]
-            fileId = colsId[3]
-            soundType = colsId[4]
+            speaker_name = folderId
+            numberId = colsId[1]
+            fileId = colsId[2]
+            soundType = colsId[3]
             fileName = folderId + '_' + numberId + '_' + fileId + '_' + soundType + '.wav'
             wav_file = os.path.join(root_path, 'wav', folderId.upper(), numberId, fileName)
+            text = cols[1]
+            items.append([text, wav_file, speaker_name, language_name])
+    return items
+
+def vctk_ms_ml(root_path, meta_file):
+    txt_file = os.path.join(root_path, meta_file)
+    items = []
+    speaker_name = "vctk"
+    language_name = "en"
+    with open(txt_file, 'r') as ttf:
+        for line in ttf:
+            cols = line.split('|')
+            colsId = cols[0].split('_')
+            folderId = colsId[0]
+            speaker_name = folderId
+            fileId = colsId[1]
+            fileName = folderId + '_' + fileId + '.wav'
+            wav_file = os.path.join(root_path, 'wav', folderId, fileName)
             text = cols[1]
             items.append([text, wav_file, speaker_name, language_name])
     return items
