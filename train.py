@@ -131,7 +131,7 @@ def format_data(data):
     return text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, language_ids, avg_text_length, avg_spec_length
 
 
-def train(model, criterion, criterion_st, optimizer, optimizer_st, scheduler,
+def train(model, criterion, criterion_st, criterion_prediction, optimizer, optimizer_st, scheduler,
           ap, global_step, epoch):
     data_loader = setup_loader(ap, model.decoder.r, is_val=False,
                                verbose=(epoch == 0))
@@ -176,15 +176,17 @@ def train(model, criterion, criterion_st, optimizer, optimizer_st, scheduler,
 
         # forward pass model
         if c.bidirectional_decoder:
-            decoder_output, postnet_output, alignments, stop_tokens, decoder_backward_output, alignments_backward = model(
+            decoder_output, postnet_output, alignments, stop_tokens, decoder_backward_output, alignments_backward, speaker_prediction = model(
                 text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
         else:
-            decoder_output, postnet_output, alignments, stop_tokens = model(
+            decoder_output, postnet_output, alignments, stop_tokens, speaker_prediction = model(
                 text_input, text_lengths, mel_input, speaker_ids=speaker_ids, language_ids=language_ids)
 
         # loss computation
         stop_loss = criterion_st(stop_tokens,
                                  stop_targets, mel_lengths) if c.stopnet else torch.zeros(1)
+        # loss computation
+        speaker_prediction_loss = criterion_prediction(text_lengths, speaker_ids, speaker_prediction) if c.use_reversal_classifier else torch.zeros(1)
         if c.loss_masking:
             decoder_loss = criterion(decoder_output, mel_input, mel_lengths)
             if c.model in ["Tacotron", "TacotronGST"]:
@@ -616,6 +618,8 @@ def main(args):  # pylint: disable=redefined-outer-name
                                                ] else nn.MSELoss()
     criterion_st = BCELossMasked(
         pos_weight=torch.tensor(10)) if c.stopnet else None
+    
+    criterion_prediction = ReversalClassifierLoss() if c.use_reversal_classifier else None
 
     if args.restore_path:
         checkpoint = torch.load(args.restore_path, map_location='cpu')
@@ -645,6 +649,8 @@ def main(args):  # pylint: disable=redefined-outer-name
         criterion.cuda()
         if criterion_st:
             criterion_st.cuda()
+        if criterion_prediction:
+            criterion_prediction.cuda()
 
     # DISTRUBUTED
     if num_gpus > 1:
@@ -674,7 +680,7 @@ def main(args):  # pylint: disable=redefined-outer-name
                 model.decoder_backward.set_r(r)
         print(" > Number of outputs per iteration:", model.decoder.r)
 
-        train_loss, global_step = train(model, criterion, criterion_st,
+        train_loss, global_step = train(model, criterion, criterion_st, criterion_prediction,
                                         optimizer, optimizer_st, scheduler, ap,
                                         global_step, epoch)
         val_loss = evaluate(model, criterion, criterion_st, ap, global_step,
