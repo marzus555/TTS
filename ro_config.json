@@ -118,6 +118,9 @@
     "use_speaker_embedding": false,     // use speaker embedding to enable multi-speaker learning.
     "style_wav_for_test": null,          // path to style wav file to be used in TacotronGST inference.
     "use_gst": false,       // TACOTRON ONLY: use global style tokens
+    
+    // MULTI-SPEAKER and GST
+    "use_language_embedding": false,     // use language embedding to enable multi-language learning.
 
     // DATASETS
     "datasets":   // List of datasets. They all merged and they get different speaker_ids.
