@@ -26,7 +26,8 @@ class Tacotron2(nn.Module):
                  location_attn=True,
                  attn_K=5,
                  separate_stopnet=True,
-                 bidirectional_decoder=False):
+                 bidirectional_decoder=False,
+                 use_reversal_classifier=False):
         super(Tacotron2, self).__init__()
         self.postnet_output_dim = postnet_output_dim
         self.decoder_output_dim = decoder_output_dim
@@ -63,11 +64,11 @@ class Tacotron2(nn.Module):
             self.decoder_backward = copy.deepcopy(self.decoder)
         self.postnet = Postnet(self.postnet_output_dim)
         
-        '''  TODO: check if adversarial task is needed: https://github.com/Tomiinek/Multilingual_Text_to_Speech
+        # https://github.com/Tomiinek/Multilingual_Text_to_Speech
         # Reversal language classifier to make encoder truly languagge independent
-        if hp.reversal_classifier:
-            self._reversal_classifier = self._get_adversarial_classifier(hp.reversal_classifier_type)
-        '''
+        self.use_reversal_classifier = use_reversal_classifier
+        if self.use_reversal_classifier:
+            self._reversal_classifier = self._get_adversarial_classifier()
         
 
     def _init_states(self):
@@ -93,10 +94,9 @@ class Tacotron2(nn.Module):
         encoder_outputs = self._add_language_embedding(encoder_outputs,
                                                       language_ids)
         
-        '''  TODO: check if adversarial task is needed: https://github.com/Tomiinek/Multilingual_Text_to_Speech
+        # https://github.com/Tomiinek/Multilingual_Text_to_Speech
         # predict language as an adversarial task if needed
-        speaker_prediction = self._reversal_classifier(encoded) if hp.reversal_classifier else None
-        '''
+        speaker_prediction = self._reversal_classifier(encoder_outputs) if self.use_reversal_classifier else None
         
         decoder_outputs, alignments, stop_tokens = self.decoder(
             encoder_outputs, mel_specs, mask)
@@ -107,7 +107,7 @@ class Tacotron2(nn.Module):
         if self.bidirectional_decoder:
             decoder_outputs_backward, alignments_backward = self._backward_inference(mel_specs, encoder_outputs, mask)
             return decoder_outputs, postnet_outputs, alignments, stop_tokens, decoder_outputs_backward, alignments_backward
-        return decoder_outputs, postnet_outputs, alignments, stop_tokens
+        return decoder_outputs, postnet_outputs, alignments, stop_tokens, speaker_prediction
 
     @torch.no_grad()
     def inference(self, text, speaker_ids=None, language_ids=None):
@@ -176,17 +176,11 @@ class Tacotron2(nn.Module):
             encoder_outputs = encoder_outputs + language_embeddings
         return encoder_outputs
     
-    '''  TODO: check if adversarial task is needed: https://github.com/Tomiinek/Multilingual_Text_to_Speech
-    def _get_adversarial_classifier(self, name):
-        if name == "reversal":
-            return ReversalClassifier(
-                hp.encoder_dimension, 
-                hp.reversal_classifier_dim, 
-                hp.speaker_number,
-                hp.reversal_gradient_clipping)
-        elif name == "cosine":
-            return CosineSimilarityClassifier(
-                hp.encoder_dimension, 
-                hp.speaker_number,
-                hp.reversal_gradient_clipping)
-    '''
+    # https://github.com/Tomiinek/Multilingual_Text_to_Speech
+    def _get_adversarial_classifier(self, speaker_number, decoder_dim=512, reversal_classifier_dim=25=6, reversal_gradient_clipping=0.25):
+        return ReversalClassifier(
+            decoder_dim, 
+            reversal_classifier_dim, 
+            speaker_number,
+            reversal_gradient_clipping)
+    
