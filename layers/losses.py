@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch.nn import Dropout, Sequential, Linear, Softmax
 from torch import nn
 from torch.nn import functional
 from TTS.utils.generic_utils import sequence_mask
@@ -139,4 +140,4 @@ class ReversalClassifierLoss(nn.Module):
         target = speakers.repeat(ml, 1).transpose(0,1)
         target[~input_mask] = ignore_index
         
-        return F.cross_entropy(speaker_prediction.transpose(1,2), target, ignore_index=ignore_index)
+        return functional.cross_entropy(speaker_prediction.transpose(1,2), target, ignore_index=ignore_index)
