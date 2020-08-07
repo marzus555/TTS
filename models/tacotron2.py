@@ -70,7 +70,7 @@ class Tacotron2(nn.Module):
         # Reversal language classifier to make encoder truly languagge independent
         self.use_reversal_classifier = use_reversal_classifier
         if self.use_reversal_classifier:
-            self._reversal_classifier = self._get_adversarial_classifier()
+            self._reversal_classifier = self._get_adversarial_classifier(num_speakers)
         
 
     def _init_states(self):
