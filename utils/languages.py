@@ -27,5 +27,5 @@ def save_language_mapping(out_path, language_mapping):
 
 def get_languages(items):
     """Returns a sorted, unique list of languages in a given dataset."""
-    languages = {e[2] for e in items}
+    languages = {e[3] for e in items}
     return sorted(languages)
