@@ -179,7 +179,7 @@ class Tacotron2(nn.Module):
         return encoder_outputs
     
     # https://github.com/Tomiinek/Multilingual_Text_to_Speech
-    def _get_adversarial_classifier(self, speaker_number, decoder_dim=512, reversal_classifier_dim=25=6, reversal_gradient_clipping=0.25):
+    def _get_adversarial_classifier(self, speaker_number, decoder_dim=512, reversal_classifier_dim=256, reversal_gradient_clipping=0.25):
         return ReversalClassifier(
             decoder_dim, 
             reversal_classifier_dim, 
