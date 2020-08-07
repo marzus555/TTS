@@ -207,7 +207,7 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
             loss += stop_loss
 
         # loss is compounded
-        if c.use_reversal_classifier
+        if c.use_reversal_classifier:
             loss += prediction_loss
             
         # backward decoder
