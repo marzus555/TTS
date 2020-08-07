@@ -2,6 +2,20 @@ import torch
 from torch.nn import functional as F
 from torch.nn import Dropout, Sequential, Linear, Softmax
 
+class GradientReversalFunction(torch.autograd.Function):
+    """Revert gradient without any further input modification."""
+
+    @staticmethod
+    def forward(ctx, x, l, c):
+        ctx.l = l
+        ctx.c = c
+        return x.view_as(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        grad_output = grad_output.clamp(-ctx.c, ctx.c)
+        return ctx.l * grad_output.neg(), None, None
+    
 class ReversalClassifier(torch.nn.Module):
     """Adversarial classifier (with two FC layers) with a gradient reversal layer.
     
