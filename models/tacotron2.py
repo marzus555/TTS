@@ -4,6 +4,7 @@ from math import sqrt
 from torch import nn
 from TTS.layers.tacotron2 import Encoder, Decoder, Postnet
 from TTS.utils.generic_utils import sequence_mask
+from TTS.layers.gst_layers import GST
 
 
 # TODO: match function arguments with tacotron
@@ -25,10 +26,12 @@ class Tacotron2(nn.Module):
                  location_attn=True,
                  attn_K=5,
                  separate_stopnet=True,
-                 bidirectional_decoder=False):
+                 bidirectional_decoder=False,
+                 gst=False):
         super(Tacotron2, self).__init__()
         self.postnet_output_dim = postnet_output_dim
         self.decoder_output_dim = decoder_output_dim
+        self.gst = gst
         self.n_frames_per_step = r
         self.bidirectional_decoder = bidirectional_decoder
         decoder_dim = 512 if num_speakers > 1 else 512
@@ -52,6 +55,13 @@ class Tacotron2(nn.Module):
         if self.bidirectional_decoder:
             self.decoder_backward = copy.deepcopy(self.decoder)
         self.postnet = Postnet(self.postnet_output_dim)
+        # global style token layers
+        if self.gst:
+            gst_embedding_dim = encoder_dim
+            self.gst_layer = GST(num_mel=80,
+                                 num_heads=4,
+                                 num_style_tokens=10,
+                                 embedding_dim=gst_embedding_dim)
 
     def _init_states(self):
         self.speaker_embeddings = None
@@ -71,6 +81,10 @@ class Tacotron2(nn.Module):
         encoder_outputs = self.encoder(embedded_inputs, text_lengths)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
+        # global style token
+        if self.gst:
+            # B x gst_dim
+            encoder_outputs = self.compute_gst(encoder_outputs, mel_specs)
         decoder_outputs, alignments, stop_tokens = self.decoder(
             encoder_outputs, mel_specs, mask)
         postnet_outputs = self.postnet(decoder_outputs)
@@ -118,6 +132,13 @@ class Tacotron2(nn.Module):
             self.speaker_embeddings_projected)
         decoder_outputs_b = decoder_outputs_b.transpose(1, 2)
         return decoder_outputs_b, alignments_b
+    
+    def compute_gst(self, inputs, mel_specs):
+        """ Compute global style token """
+        # pylint: disable=not-callable
+        gst_outputs = self.gst_layer(mel_specs)
+        inputs = self._add_speaker_embedding(inputs, gst_outputs)
+        return inputs
 
     def _add_speaker_embedding(self, encoder_outputs, speaker_ids):
         if hasattr(self, "speaker_embedding") and speaker_ids is None:
