@@ -5,6 +5,7 @@ from torch import nn
 from TTS.layers.tacotron2 import Encoder, Decoder, Postnet
 from TTS.utils.generic_utils import sequence_mask
 from TTS.layers.classifier import ReversalClassifier
+from TTS.layers.gst_layers import GST
 
 
 
@@ -29,7 +30,8 @@ class Tacotron2(nn.Module):
                  attn_K=5,
                  separate_stopnet=True,
                  bidirectional_decoder=False,
-                 use_reversal_classifier=False):
+                 use_reversal_classifier=False,
+                 gst=False):
         super(Tacotron2, self).__init__()
         self.postnet_output_dim = postnet_output_dim
         self.decoder_output_dim = decoder_output_dim
@@ -65,6 +67,13 @@ class Tacotron2(nn.Module):
         if self.bidirectional_decoder:
             self.decoder_backward = copy.deepcopy(self.decoder)
         self.postnet = Postnet(self.postnet_output_dim)
+        # global style token layers
+        if self.gst:
+            gst_embedding_dim = encoder_dim
+            self.gst_layer = GST(num_mel=80,
+                                 num_heads=4,
+                                 num_style_tokens=10,
+                                 embedding_dim=gst_embedding_dim)
         
         # https://github.com/Tomiinek/Multilingual_Text_to_Speech
         # Reversal language classifier to make encoder truly languagge independent
@@ -99,7 +108,13 @@ class Tacotron2(nn.Module):
         # https://github.com/Tomiinek/Multilingual_Text_to_Speech
         # predict language as an adversarial task if needed
         speaker_prediction = self._reversal_classifier(encoder_outputs) if self.use_reversal_classifier else None
+        #TODO: ?? need to disentagle reference audio too?
         
+        # global style token
+        if self.gst:
+            # B x gst_dim
+            encoder_outputs = self.compute_gst(encoder_outputs, mel_specs)
+
         decoder_outputs, alignments, stop_tokens = self.decoder(
             encoder_outputs, mel_specs, mask)
         postnet_outputs = self.postnet(decoder_outputs)
@@ -151,7 +166,14 @@ class Tacotron2(nn.Module):
             self.speaker_embeddings_projected, self.language_embeddings_projected)
         decoder_outputs_b = decoder_outputs_b.transpose(1, 2)
         return decoder_outputs_b, alignments_b
-
+    
+    def compute_gst(self, inputs, mel_specs):
+        """ Compute global style token """
+        # pylint: disable=not-callable
+        gst_outputs = self.gst_layer(mel_specs)
+        inputs = self._add_speaker_embedding(inputs, gst_outputs)
+        return inputs
+    
     def _add_speaker_embedding(self, encoder_outputs, speaker_ids):
         if hasattr(self, "speaker_embedding") and speaker_ids is None:
             raise RuntimeError(" [!] Model has speaker embedding layer but speaker_id is not provided")
