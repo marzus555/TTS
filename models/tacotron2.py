@@ -97,11 +97,13 @@ class Tacotron2(nn.Module):
         return decoder_outputs, postnet_outputs, alignments, stop_tokens
 
     @torch.no_grad()
-    def inference(self, text, speaker_ids=None):
+    def inference(self, text, speaker_ids=None, style_mel=None):
         embedded_inputs = self.embedding(text).transpose(1, 2)
         encoder_outputs = self.encoder.inference(embedded_inputs)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
+        if self.gst and style_mel is not None:
+            encoder_outputs = self.compute_gst(encoder_outputs, style_mel)
         mel_outputs, alignments, stop_tokens = self.decoder.inference(
             encoder_outputs)
         mel_outputs_postnet = self.postnet(mel_outputs)
@@ -110,7 +112,7 @@ class Tacotron2(nn.Module):
             mel_outputs, mel_outputs_postnet, alignments)
         return mel_outputs, mel_outputs_postnet, alignments, stop_tokens
 
-    def inference_truncated(self, text, speaker_ids=None):
+    def inference_truncated(self, text, speaker_ids=None, style_mel=None):
         """
         Preserve model states for continuous inference
         """
@@ -118,6 +120,8 @@ class Tacotron2(nn.Module):
         encoder_outputs = self.encoder.inference_truncated(embedded_inputs)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
+        if self.gst and style_mel is not None:
+            encoder_outputs = self.compute_gst(encoder_outputs, style_mel)
         mel_outputs, alignments, stop_tokens = self.decoder.inference_truncated(
             encoder_outputs)
         mel_outputs_postnet = self.postnet(mel_outputs)
@@ -137,8 +141,9 @@ class Tacotron2(nn.Module):
         """ Compute global style token """
         # pylint: disable=not-callable
         gst_outputs = self.gst_layer(mel_specs)
-        inputs = self._add_speaker_embedding(inputs, gst_outputs)
-        return inputs
+        gst_outputs_ = gst_outputs.expand(
+            inputs.size(0), inputs.size(1), -1)
+        return inputs + gst_outputs_
 
     def _add_speaker_embedding(self, encoder_outputs, speaker_ids):
         if hasattr(self, "speaker_embedding") and speaker_ids is None:
