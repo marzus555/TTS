@@ -206,6 +206,9 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         if not c.separate_stopnet and c.stopnet:
             loss += stop_loss
             
+        if c.use_reversal_classifier:
+            loss += (c.reversal_classifier_weight * prediction_loss)
+            
         # backward decoder
         if c.bidirectional_decoder:
             if c.loss_masking:
