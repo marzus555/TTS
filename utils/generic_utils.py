@@ -322,7 +322,8 @@ def setup_model(num_chars, num_speakers, num_languages, c):
                         attn_K=c.attention_heads,
                         separate_stopnet=c.separate_stopnet,
                         bidirectional_decoder=c.bidirectional_decoder,
-                        use_reversal_classifier=c.use_reversal_classifier)
+                        use_reversal_classifier=c.use_reversal_classifier,
+                        separate_reversal_classifier=c.separate_reversal_classifier)
     return model
 
 
