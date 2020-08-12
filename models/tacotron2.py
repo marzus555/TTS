@@ -31,6 +31,7 @@ class Tacotron2(nn.Module):
                  separate_stopnet=True,
                  bidirectional_decoder=False,
                  use_reversal_classifier=False,
+                 separate_reversal_classifier=False,
                  gst=False):
         super(Tacotron2, self).__init__()
         self.postnet_output_dim = postnet_output_dim
@@ -79,6 +80,7 @@ class Tacotron2(nn.Module):
         # https://github.com/Tomiinek/Multilingual_Text_to_Speech
         # Reversal language classifier to make encoder truly languagge independent
         self.use_reversal_classifier = use_reversal_classifier
+        self.separate_reversal_classifier = separate_reversal_classifier
         if self.use_reversal_classifier:
             self._reversal_classifier = self._get_adversarial_classifier(num_speakers)
         
@@ -108,7 +110,9 @@ class Tacotron2(nn.Module):
         
         # https://github.com/Tomiinek/Multilingual_Text_to_Speech
         # predict language as an adversarial task if needed
-        speaker_prediction = self._reversal_classifier(encoder_outputs) if self.use_reversal_classifier else None
+        speaker_prediction = None
+        if self.use_reversal_classifier:
+            speaker_prediction = self._reversal_classifier(encoder_outputs.detach() if self.separate_reversal_classifier else encoder_outputs)
         #TODO: ?? need to disentagle reference audio too?
         
         # global style token
