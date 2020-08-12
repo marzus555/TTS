@@ -131,7 +131,7 @@ def format_data(data):
     return text_input, text_lengths, mel_input, mel_lengths, linear_input, stop_targets, speaker_ids, language_ids, avg_text_length, avg_spec_length
 
 
-def train(model, criterion, criterion_st, criterion_prediction, optimizer, optimizer_st, optimizer_rc, scheduler,
+def train(model, criterion, criterion_st, criterion_prediction, optimizer, optimizer_st, scheduler,
           ap, global_step, epoch):
     data_loader = setup_loader(ap, model.decoder.r, is_val=False,
                                verbose=(epoch == 0))
@@ -174,9 +174,6 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         optimizer.zero_grad()
         if optimizer_st:
             optimizer_st.zero_grad()
-            
-        if optimizer_rc:
-            optimizer_rc.zero_grad()
 
         # forward pass model
         if c.bidirectional_decoder:
@@ -208,10 +205,6 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         loss = decoder_loss + postnet_loss
         if not c.separate_stopnet and c.stopnet:
             loss += stop_loss
-
-        # loss is compounded
-        if not c.separate_reversal_classifier and c.use_reversal_classifier:
-            loss += prediction_loss
             
         # backward decoder
         if c.bidirectional_decoder:
@@ -240,14 +233,6 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
             optimizer_st.step()
         else:
             grad_norm_st = 0
-            
-        if c.separate_reversal_classifier:
-            prediction_loss.backward()
-            optimizer_rc, _ = adam_weight_decay(optimizer_rc)
-            grad_norm_rc, _ = check_update(model._reversal_classifier, 1.0)
-            optimizer_rc.step()
-        else:
-            grad_norm_rc = 0
 
         step_time = time.time() - start_time
         epoch_time += step_time
@@ -256,11 +241,11 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
             print(
                 "   | > Step:{}/{}  GlobalStep:{}  PostnetLoss:{:.5f}  "
                 "DecoderLoss:{:.5f}  StopLoss:{:.5f}  PredictionLoss:{:.5f}  AlignScore:{:.4f}  GradNorm:{:.5f}  "
-                "GradNormST:{:.5f} GradNormRC:{:.5f} AvgTextLen:{:.1f}  AvgSpecLen:{:.1f}  StepTime:{:.2f}  "
+                "GradNormST:{:.5f} AvgTextLen:{:.1f}  AvgSpecLen:{:.1f}  StepTime:{:.2f}  "
                 "LoaderTime:{:.2f}  LR:{:.6f}".format(
                     num_iter, batch_n_iter, global_step, postnet_loss.item(),
                     decoder_loss.item(), stop_loss.item(), prediction_loss.item(), align_score,
-                    grad_norm, grad_norm_st, grad_norm_rc, avg_text_length, avg_spec_length,
+                    grad_norm, grad_norm_st, avg_text_length, avg_spec_length,
                     step_time, loader_time, current_lr),
                 flush=True)
 
@@ -309,7 +294,7 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
             if global_step % c.save_step == 0:
                 if c.checkpoint:
                     # save model
-                    save_checkpoint(model, optimizer, optimizer_st, optimizer_rc,
+                    save_checkpoint(model, optimizer, optimizer_st,
                                     postnet_loss.item(), OUT_PATH, global_step,
                                     epoch)
 
@@ -640,13 +625,6 @@ def main(args):  # pylint: disable=redefined-outer-name
                              weight_decay=0)
     else:
         optimizer_st = None
-        
-    if c.use_reversal_classifier and c.separate_reversal_classifier:
-        optimizer_rc = RAdam(model._reversal_classifier.parameters(),
-                             lr=c.lr,
-                             weight_decay=0)
-    else:
-        optimizer_rc = None
 
     if c.loss_masking:
         criterion = L1LossMasked(c.seq_len_norm) if c.model in ["Tacotron", "TacotronGST"
@@ -719,7 +697,7 @@ def main(args):  # pylint: disable=redefined-outer-name
         print(" > Number of outputs per iteration:", model.decoder.r)
 
         train_loss, global_step = train(model, criterion, criterion_st, criterion_prediction,
-                                        optimizer, optimizer_st, optimizer_rc, scheduler, ap,
+                                        optimizer, optimizer_st, scheduler, ap,
                                         global_step, epoch)
         val_loss = evaluate(model, criterion, criterion_st, criterion_prediction, ap, global_step,
                             epoch)
