@@ -123,6 +123,7 @@
     "use_language_embedding": false,     // use language embedding to enable multi-language learning.
     
     "use_reversal_classifier": false,
+    "separate_reversal_classifier": false,
     "reversal_classifier_dim": 256,        // used if use_reversal_classifier is True and reversal_classifier_type id 'reversal'
                                          // size of the hidden layer of the adversarial classifer
     "reversal_classifier_weight": 0.1,          // weight of the loss of the adversarial classifier (it is also reduced by number of mels, see TacotronLoss)
