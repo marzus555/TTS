@@ -239,7 +239,7 @@ def train(model, criterion, criterion_st, criterion_prediction, optimizer, optim
         else:
             grad_norm_st = 0
             
-        if c.use_reversal_classifier:
+        if c.separate_reversal_classifier:
             prediction_loss.backward()
             optimizer_rc, _ = adam_weight_decay(optimizer_rc)
             grad_norm_rc, _ = check_update(model._reversal_classifier, 1.0)
