@@ -36,7 +36,7 @@ def tts(model,
     if use_vocoder_model:
         #postnet_output = ap._denormalize(postnet_output)
         #postnet_output = ap_vocoder._normalize(postnet_output)
-        vocoder_input = torch.FloatTensor(postnet_output.T).unsqueeze(0)
+        vocoder_input = torch.FloatTensor(postnet_output).unsqueeze(0)
         waveform = vocoder_model.generate(
             vocoder_input.cuda() if use_cuda else vocoder_input,
             batched=batched_vocoder,
