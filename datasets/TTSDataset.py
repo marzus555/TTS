@@ -188,6 +188,7 @@ class MyDataset(Dataset):
                 batch[idx]['item_idx'] for idx in ids_sorted_decreasing
             ]
             text = [batch[idx]['text'] for idx in ids_sorted_decreasing]
+            true_text = text
             speaker_name = [batch[idx]['speaker_name']
                             for idx in ids_sorted_decreasing]
 
@@ -227,7 +228,7 @@ class MyDataset(Dataset):
             mel_lengths = torch.LongTensor(mel_lengths)
             stop_targets = torch.FloatTensor(stop_targets)
 
-            return text, text_lenghts, speaker_name, linear, mel, mel_lengths, \
+            return true_text, text, text_lenghts, speaker_name, linear, mel, mel_lengths, \
                    stop_targets, item_idxs
 
         raise TypeError(("batch must contain tensors, numbers, dicts or lists;\
