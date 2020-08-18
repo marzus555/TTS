@@ -137,23 +137,38 @@ if __name__ == "__main__":
     if args.vocoder_path != "":
         VC = load_config(args.vocoder_config_path)
         ap_vocoder = AudioProcessor(**VC.audio)
-        bits = 10
-        vocoder_model = VocoderModel(
-        rnn_dims=512,
-        fc_dims=512,
-        mode=VC.mode,
-        mulaw=VC.mulaw,
-        pad=VC.pad,
-        use_aux_net=VC.use_aux_net,
-        use_upsample_net=VC.use_upsample_net,
-        upsample_factors=VC.upsample_factors,
-        feat_dims=80,
-        compute_dims=128,
-        res_out_dims=128,
-        res_blocks=10,
-        hop_length=ap.hop_length,
-        sample_rate=ap.sample_rate,
-    )
+        
+        if VC.bits is not None:
+                vocoder_model = VocoderModel(
+                        rnn_dims=512,
+                        fc_dims=512,
+                        bits=VC.bits,
+                        pad=VC.pad,
+                        upsample_factors=VC.upsample_factors,  # set this depending on dataset
+                        feat_dims=80,
+                        compute_dims=128,
+                        res_out_dims=128,
+                        res_blocks=10,
+                        hop_length=ap.hop_length,
+                        sample_rate=ap.sample_rate
+                )
+        else:
+                vocoder_model = VocoderModel(
+                        rnn_dims=512,
+                        fc_dims=512,
+                        mode=VC.mode,
+                        mulaw=VC.mulaw,
+                        pad=VC.pad,
+                        use_aux_net=VC.use_aux_net,
+                        use_upsample_net=VC.use_upsample_net,
+                        upsample_factors=VC.upsample_factors,
+                        feat_dims=80,
+                        compute_dims=128,
+                        res_out_dims=128,
+                        res_blocks=10,
+                        hop_length=ap.hop_length,
+                        sample_rate=ap.sample_rate,
+                    )
 
         check = torch.load(args.vocoder_path)
         vocoder_model.load_state_dict(check['model'])
