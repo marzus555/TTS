@@ -592,7 +592,8 @@ def main(args):  # pylint: disable=redefined-outer-name
     # parse speakers
     if c.use_speaker_embedding:
         speakers = get_speakers(meta_data_train)
-        if args.restore_path:
+        speaker_mapping = {name: i for i, name in enumerate(speakers)}
+        '''if args.restore_path:
             prev_out_path = os.path.dirname(args.restore_path)
             speaker_mapping = load_speaker_mapping(prev_out_path)
             assert all([speaker in speaker_mapping
@@ -600,7 +601,7 @@ def main(args):  # pylint: disable=redefined-outer-name
                                                    "introduce new speakers to " \
                                                    "a previously trained model."
         else:
-            speaker_mapping = {name: i for i, name in enumerate(speakers)}
+            speaker_mapping = {name: i for i, name in enumerate(speakers)}'''
         save_speaker_mapping(OUT_PATH, speaker_mapping)
         num_speakers = len(speaker_mapping)
         print("Training with {} speakers: {}".format(num_speakers,
@@ -611,7 +612,8 @@ def main(args):  # pylint: disable=redefined-outer-name
     # parse languages
     if c.use_language_embedding:
         languages = get_languages(meta_data_train)
-        if args.restore_path:
+        language_mapping = {name: i for i, name in enumerate(languages)}
+        '''if args.restore_path:
             prev_out_path = os.path.dirname(args.restore_path)
             language_mapping = load_language_mapping(prev_out_path)
             assert all([language in language_mapping
@@ -619,7 +621,7 @@ def main(args):  # pylint: disable=redefined-outer-name
                                                    "introduce new languages to " \
                                                    "a previously trained model."
         else:
-            language_mapping = {name: i for i, name in enumerate(languages)}
+            language_mapping = {name: i for i, name in enumerate(languages)}'''
         save_language_mapping(OUT_PATH, language_mapping)
         num_languages = len(language_mapping)
         print("Training with {} languages: {}".format(num_languages,
