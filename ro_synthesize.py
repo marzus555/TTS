@@ -22,11 +22,12 @@ def tts(model,
         use_cuda,
         batched_vocoder,
         speaker_id=None,
+        style_wav=None,
         figures=False):
     t_1 = time.time()
     use_vocoder_model = vocoder_model is not None
     waveform, alignment, _, postnet_output, stop_tokens = synthesis(
-        model, text, C, use_cuda, ap, speaker_id, style_wav=None,
+        model, text, C, use_cuda, ap, speaker_id, style_wav=style_wav,
         truncated=False, enable_eos_bos_chars=C.enable_eos_bos_chars,
         use_griffin_lim=(not use_vocoder_model), do_trim_silence=True)
 
@@ -94,8 +95,13 @@ if __name__ == "__main__":
         type=int,
         help="target speaker_id if the model is multi-speaker.",
         default=None)
+    parser.add_argument(
+        '--style_wav_path',
+        type=str,
+        help="style wav path if the model is GST.",
+        default=None)
     args = parser.parse_args()
-
+        
     if args.vocoder_path != "":
         assert args.use_cuda, " [!] Enable cuda for vocoder."
         from WaveRNN.models.wavernn import Model as VocoderModel
@@ -192,6 +198,7 @@ if __name__ == "__main__":
                        args.use_cuda,
                        args.batched_vocoder,
                        speaker_id=speaker_id,
+                       style_wav=args.style_wav_path,
                        figures=False)
 
     # save the results
