@@ -103,6 +103,8 @@ class Tacotron2(nn.Module):
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
         print('COmputing')
+        print(self.gst)
+        print(style_mel)
         if self.gst and style_mel is not None:
             encoder_outputs = self.compute_gst(encoder_outputs, style_mel)
         mel_outputs, alignments, stop_tokens = self.decoder.inference(
