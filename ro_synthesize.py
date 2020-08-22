@@ -23,11 +23,12 @@ def tts(model,
         batched_vocoder,
         speaker_id=None,
         language_id=None,
+        style_wav=None,
         figures=False):
     t_1 = time.time()
     use_vocoder_model = vocoder_model is not None
     waveform, alignment, _, postnet_output, stop_tokens = synthesis(
-        model, text, C, use_cuda, ap, speaker_id, language_id, style_wav=None,
+        model, text, C, use_cuda, ap, speaker_id, language_id, style_wav=style_wav,
         truncated=False, enable_eos_bos_chars=C.enable_eos_bos_chars,
         use_griffin_lim=(not use_vocoder_model), do_trim_silence=True)
 
@@ -103,6 +104,11 @@ if __name__ == "__main__":
         '--language_id',
         type=int,
         help="target language if the model is multi-language.",
+        default=None)
+    parser.add_argument(
+        '--style_wav_path',
+        type=str,
+        help="style wav path if the model is GST.",
         default=None)
     args = parser.parse_args()
 
@@ -197,6 +203,7 @@ if __name__ == "__main__":
                        args.batched_vocoder,
                        speaker_id=speaker_id,
                        language_id=language_id,
+                       style_wav=args.style_wav_path,
                        figures=False)
 
     # save the results
