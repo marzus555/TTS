@@ -147,7 +147,6 @@ class Tacotron2(nn.Module):
         gst_outputs = self.gst_layer(mel_specs)
         gst_outputs_ = gst_outputs.expand(
             inputs.size(0), inputs.size(1), -1)
-        print('Computed GST')
         return inputs + gst_outputs_
 
     def _add_speaker_embedding(self, encoder_outputs, speaker_ids):
