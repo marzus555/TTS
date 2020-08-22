@@ -71,6 +71,7 @@ class Tacotron2(nn.Module):
         self.postnet = Postnet(self.postnet_output_dim)
         # global style token layers
         if self.gst:
+            print('running with GST')
             gst_embedding_dim = encoder_dim
             self.gst_layer = GST(num_mel=80,
                                  num_heads=4,
