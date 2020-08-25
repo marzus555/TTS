@@ -34,6 +34,8 @@ def tts(model,
     if C.model == "Tacotron" and use_vocoder_model:
         postnet_output = ap.out_linear_to_mel(postnet_output.T).T
     # correct if there is a scale difference b/w two models
+    if batched_vocoder:
+        print('using batched vocoder')
     if use_vocoder_model:
         #postnet_output = ap._denormalize(postnet_output)
         #postnet_output = ap_vocoder._normalize(postnet_output)
@@ -85,7 +87,7 @@ if __name__ == "__main__":
         '--batched_vocoder',
         type=bool,
         help="If True, vocoder model uses faster batch processing.",
-        default=True)
+        default=False)
     parser.add_argument('--speakers_json',
                         type=str,
                         help="JSON file for multi-speaker model.",
