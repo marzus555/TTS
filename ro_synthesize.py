@@ -23,7 +23,9 @@ def tts(model,
         batched_vocoder,
         speaker_id=None,
         style_wav=None,
-        figures=False):
+        figures=False,
+        target=8000,
+        overlap=400):
     t_1 = time.time()
     use_vocoder_model = vocoder_model is not None
     waveform, alignment, _, postnet_output, stop_tokens = synthesis(
@@ -88,6 +90,15 @@ if __name__ == "__main__":
         type=bool,
         help="If True, vocoder model uses faster batch processing.",
         default=False)
+    parser.add_argument(
+        '--target',
+        type=int,
+        default=8000)
+    parser.add_argument(
+        '--overlap',
+        type=int,
+        default=400)
+        
     parser.add_argument('--speakers_json',
                         type=str,
                         help="JSON file for multi-speaker model.",
