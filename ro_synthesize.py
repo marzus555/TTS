@@ -37,7 +37,7 @@ def tts(model,
         postnet_output = ap.out_linear_to_mel(postnet_output.T).T
     # correct if there is a scale difference b/w two models
     if batched_vocoder:
-        print('using batched vocoder')
+        print('using batched vocoder and target: ', target, ' and overlap: ', overlap)
     if use_vocoder_model:
         #postnet_output = ap._denormalize(postnet_output)
         #postnet_output = ap_vocoder._normalize(postnet_output)
