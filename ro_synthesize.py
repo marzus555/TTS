@@ -217,9 +217,9 @@ if __name__ == "__main__":
     # save the results
     file_name = 'wav_file.wav'
     if vocoder_model is not None:
-        file_name = 'gl_' + text + '.wav'
+        file_name = 'gl_' + text.replace(" ", "_") + '.wav'
     else:
-        file_name = 'wavernn_' + text + '.wav'
+        file_name = 'wavernn_' + text.replace(" ", "_") + '.wav'
     out_path = os.path.join(args.out_path, file_name)
     print(" > Saving output to {}".format(out_path))
     ap.save_wav(wav, out_path)
