@@ -109,6 +109,7 @@ class MyDataset(Dataset):
 
     def load_data(self, idx):
         text, wav_file, speaker_name = self.items[idx]
+        text_string = text
         wav = np.asarray(self.load_wav(wav_file), dtype=np.float32)
 
         if self.use_phonemes:
@@ -124,7 +125,8 @@ class MyDataset(Dataset):
             'text': text,
             'wav': wav,
             'item_idx': self.items[idx][1],
-            'speaker_name': speaker_name
+            'speaker_name': speaker_name,
+            'text_string': text_string
         }
         return sample
 
@@ -188,6 +190,7 @@ class MyDataset(Dataset):
                 batch[idx]['item_idx'] for idx in ids_sorted_decreasing
             ]
             text = [batch[idx]['text'] for idx in ids_sorted_decreasing]
+            true_text = [batch[idx]['text_string'] for idx in ids_sorted_decreasing]
             speaker_name = [batch[idx]['speaker_name']
                             for idx in ids_sorted_decreasing]
 
@@ -227,7 +230,7 @@ class MyDataset(Dataset):
             mel_lengths = torch.LongTensor(mel_lengths)
             stop_targets = torch.FloatTensor(stop_targets)
 
-            return text, text_lenghts, speaker_name, linear, mel, mel_lengths, \
+            return true_text, text, text_lenghts, speaker_name, linear, mel, mel_lengths, \
                    stop_targets, item_idxs
 
         raise TypeError(("batch must contain tensors, numbers, dicts or lists;\
